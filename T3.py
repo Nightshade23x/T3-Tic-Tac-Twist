@@ -2,7 +2,6 @@ import random
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
-# === GK QUESTIONS ===
 questions = [
     ("What is the capital of Zambia", "lusaka"),
     ("Who painted the Mona Lisa", ["leonardo da vinci","da vinci"]),
@@ -109,9 +108,9 @@ questions = [
     ("What is the chemical formula of water", "h2o"),
     ("Which is the largest volcano in the world", "mauna loa")
 ]
-# === INITIAL SETTINGS ===
+
 board = [[" " for _ in range(3)] for _ in range(3)]
-player = random.choice(["X", "O"])  # coin toss
+player = random.choice(["X", "O"])  
 bank_X = 0
 bank_O = 0
 wrong_X = 0
@@ -120,7 +119,6 @@ wrong_O = 0
 root = tk.Tk()
 root.title("T3: Tic Tac Twist")
 
-# === HOW TO PLAY ===
 instructions = (
     " HOW TO PLAY T3: TIC TAC TWIST \n\n"
     "1️⃣ Each turn, answer a GK question to earn your move.\n\n"
@@ -137,7 +135,6 @@ instructions = (
 messagebox.showinfo("How to Play", instructions)
 messagebox.showinfo("Coin Toss", f" Coin toss result: Player{player} starts!")
 
-# === UI SETUP ===
 label = tk.Label(root, text=f"Player {player}, its ur turn, pls dont embarass urself",
                  font=("Arial", 16, "bold"), fg="white", bg="black", pady=10)
 label.pack(fill="x")
@@ -155,7 +152,7 @@ frame.pack(pady=10)
 
 buttons = [[None for _ in range(3)] for _ in range(3)]
 
-# === GAME FUNCTIONS ===
+
 def update_banks():
     bank_x_label.config(text=f"Player X Banked: {'✅' if bank_X else '❌'}")
     bank_o_label.config(text=f"Player O Banked: {'✅' if bank_O else '❌'}")
@@ -188,43 +185,67 @@ def ask_question():
             messagebox.showinfo("Quit", "Game ends because this one is a coward ")
             root.destroy()
             return False
-    if ans.strip().lower() == answer.strip().lower():
+
+    ans = ans.strip().lower()
+
+    if isinstance(answer, list):
+        correct = any(ans == a.strip().lower() for a in answer)
+    else:
+        correct = ans == answer.strip().lower()
+
+    if correct:
         messagebox.showinfo("Correct", f"Damn ok, I'm surprised u had it in u! Marker secured ")
         return True
     else:
         messagebox.showinfo("Wrong", f"Player{player}... Honestly, I ain't even surprised — you're wrong mf ")
         return False
 
-def shuffle_markers(player):
-    """Randomly moves player's markers to new empty spots if possible, but never blocks placement."""
-    positions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == player]
+def shuffle_markers(opponent):
+    
+    positions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == opponent]
     empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
 
     if not positions:
-        messagebox.showinfo("Empty", f"Player{player} has no markers to shuffle — chaos fizzles out! 😅")
-        return
-
-    # If no empties, randomly shuffle existing positions among themselves
-    if not empties:
-        random.shuffle(positions)
-        messagebox.showinfo("Full Board", f"No empty spots! Player{player}'s chaos just mixed up their own markers 💫")
+        messagebox.showinfo("Chaos", f"Player{opponent} had no markers — chaos did nothing 😅")
         return
 
     random.shuffle(positions)
     random.shuffle(empties)
-    moves = min(len(positions), len(empties))
 
-    # Clear and re-place some markers in random new spots
+    moves = min(len(positions), len(empties)) if empties else len(positions)
+
     for i, j in positions[:moves]:
         board[i][j] = " "
         buttons[i][j].config(text=" ")
-
     for k in range(moves):
-        ni, nj = empties[k]
-        board[ni][nj] = player
-        buttons[ni][nj].config(text=player, state="disabled")
+        if empties:
+            ni, nj = empties[k % len(empties)]
+            board[ni][nj] = opponent
+            buttons[ni][nj].config(text=opponent, state="disabled")
+        else:
+            ni, nj = random.choice([(x, y) for x in range(3) for y in range(3)])
+            board[ni][nj] = opponent
+            buttons[ni][nj].config(text=opponent, state="disabled")
 
-    messagebox.showinfo("Twisted Fate", f"Player{player}'s markers randomly shifted! Chaos reigns 🔥")
+    messagebox.showinfo("CHAOS!!", f"😈 Player{opponent}'s markers have been shuffled across the board!")
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == " ":
+                buttons[i][j].config(state="normal")
+def relocate_if_conflict(r, c, player):
+
+    opponent = "O" if player == "X" else "X"
+    if board[r][c] == opponent:
+        empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
+
+        if empties:
+            new_r, new_c = random.choice(empties)
+            board[new_r][new_c] = opponent
+            buttons[new_r][new_c].config(text=opponent, state="disabled")
+        board[r][c] = " "
+        buttons[r][c].config(text=" ")
+
+
 
 def make_move(r, c):
     global player, bank_X, bank_O, wrong_X, wrong_O
@@ -232,7 +253,6 @@ def make_move(r, c):
     if board[r][c] != " ":
         messagebox.showinfo("Taken", "Spot is taken, cant u see?")
         return
-
     result = ask_question()
     if result is None:
         return
@@ -244,33 +264,56 @@ def make_move(r, c):
         player = "O" if player == "X" else "X"
         label.config(text=f"Player{player}, its ur turn, pls dont embarass urself")
         return
-
     current_bank = bank_X if player == "X" else bank_O
+    opponent = "O" if player == "X" else "X"
     has_bank_text = "✅ You already have a banked move ready!" if current_bank else "❌ No banked move yet."
 
-    # 🟢 If player already has a banked move
     if current_bank == 1:
         action = messagebox.askquestion(
             "Your Move",
             f"{has_bank_text}\n\nDo u want to:\n\n"
-            "Yes = Use ur banked chaos move NOW \n"
+            "Yes = Use ur banked chaos move NOW (and play 2 markers!)\n"
             "No = Place normally (skip banking this turn)"
         )
+
         if action == "yes":
-            shuffle_markers(player)
+            shuffle_markers(opponent)  
+            relocate_if_conflict(r, c, player)
             board[r][c] = player
             buttons[r][c].config(text=player, state="disabled")
-            if player == "X":
-                bank_X = 0
-            else:
-                bank_O = 0
-            update_banks()
-            messagebox.showinfo("Chaos Used", f"Player{player} unleashed their banked move and placed a new marker! 💀")
+            messagebox.showinfo("Second Move", f"Player{player}, place your 2nd marker for your banked move!")
+            
+            def second_click(rr, cc):
+                if board[rr][cc] == " " or board[rr][cc] == opponent:
+                    relocate_if_conflict(rr, cc, player)
+                    board[rr][cc] = player
+                    buttons[rr][cc].config(text=player, state="disabled")
+
+                    if player == "X":
+                        bank_X = 0
+                    else:
+                        bank_O = 0
+                    update_banks()
+                    for i in range(3):
+                        for j in range(3):
+                            buttons[i][j].config(command=lambda r=i, c=j: make_move(r, c))
+                    if check_winner(player):
+                        messagebox.showinfo("Winner", f"Player{player} wins with chaos!")
+                        root.destroy()
+                        return
+                    switch_turn()
+                else:
+                    messagebox.showinfo("Invalid", "That spot is taken!")
+
+            for i in range(3):
+                for j in range(3):
+                    buttons[i][j].config(command=lambda rr=i, cc=j: second_click(rr, cc))
+            return
+
         else:
             board[r][c] = player
             buttons[r][c].config(text=player, state="disabled")
 
-    # 🟢 If player does NOT have a banked move, ask to bank or play
     else:
         choice = messagebox.askquestion(
             "Your Move",
@@ -282,30 +325,30 @@ def make_move(r, c):
             else:
                 bank_O = 1
             update_banks()
-            messagebox.showinfo("Banked", f"Ayt Player{player}, ur marker is banked ")
-            player = "O" if player == "X" else "X"
-            label.config(text=f"Player{player}, its ur turn, pls dont embarass urself")
+            messagebox.showinfo("Banked", f"Ayt Player{player}, ur marker is banked.")
+            switch_turn()
             return
         else:
             board[r][c] = player
             buttons[r][c].config(text=player, state="disabled")
 
-    # 🟡 Check winner/draw
     if check_winner(player):
-        messagebox.showinfo("Winner", f"Wowwww player{player} wins!..the worst player to ever win ")
+        messagebox.showinfo("Winner", f"Wowwww player{player} wins!..the worst player to ever win.")
         root.destroy()
         return
 
     if is_draw():
-        messagebox.showinfo("Drawwww", "Fuck, need to rerun this code again ffs ")
+        messagebox.showinfo("Drawwww", "Fuck, need to rerun this code again ffs.")
         root.destroy()
         return
 
+    switch_turn()
+
+def switch_turn():
+    global player
     player = "O" if player == "X" else "X"
     label.config(text=f"Player{player}, its ur turn, pls dont embarass urself")
 
-
-# === CREATE BUTTONS ===
 for i in range(3):
     for j in range(3):
         b = tk.Button(frame, text=" ", font=("Arial", 22), width=5, height=2,
