@@ -9,7 +9,7 @@ questions = [
     ("What is the capital of Canada", "ottawa"),
     ("What is the longest river in the world", "nile"),
     ("What is the capital of France", "paris"),
-    ("Who wrote the play Romeo and Juliet", "william shakespeare"),
+    ("Who wrote the play Romeo and Juliet", ["william shakespeare","shakespeare"]),
     ("Which planet is known as the Red Planet", "mars"),
     ("What is the largest ocean on Earth",[ "pacific ","pacific ocean"]),
     ("Who was the first President of the United States", "george washington"),
@@ -20,7 +20,7 @@ questions = [
     ("Which element has the chemical symbol K", "potassium"),
     ("Who discovered gravity", ["isaac newton","newton"]),
     ("Which country is known as the Land of the Rising Sun", "japan"),
-    ("Which is the largest desert in the world", ["sahara","sahara desert"]),
+    ("Which is the largest desert in the world", ["antarctic","antarctic desert"]),
     ("In which country were the Olympic Games invented", "greece"),
     ("Who was the first man to walk on the moon", "neil armstrong"),
     ("Which is the largest mammal in the world", "blue whale"),
@@ -55,7 +55,7 @@ questions = [
     ("What is the boiling point of water in Celsius", "100"),
     ("Which is the longest bone in the human body", "femur"),
     ("Who is known as the Father of Computers", "charles babbage"),
-    ("Which ocean lies between Africa and Australia", "indian ocean"),
+    ("Which ocean lies between Africa and Australia", ["indian ocean","indian"]),
     ("How many days are there in a leap year", "366"),
     ("What is the capital of Germany", "berlin"),
     ("Who was the first person to climb Mount Everest", "edmund hillary"),
@@ -95,7 +95,7 @@ questions = [
     ("Name one of the three capitals of South Africa", ["pretoria","cape town","bloemfontein"]),
     ("Which is the hottest planet in our solar system", "venus"),
     ("What is the largest island in the world", "greenland"),
-    ("Which ocean is on the east coast of the United States", "atlantic ocean"),
+    ("Which ocean is in between Europe and USA?", ["atlantic ocean","atlantic"]),
     ("Which is the most spoken language in the world", "english"),
     ("Which fruit is known as the king of fruits", "mango"),
     ("Who was the first Indian Prime Minister", ["jawaharlal nehru","nehru"]),
@@ -107,6 +107,7 @@ questions = [
     ("Which planet is farthest from the Sun", "neptune"),
     ("What is the chemical formula of water", "h2o"),
     ("Which is the largest volcano in the world", "mauna loa")
+
 ]
 
 board = [[" " for _ in range(3)] for _ in range(3)]
@@ -168,12 +169,26 @@ def check_winner(player):
 def is_draw():
     return all(board[i][j] != " " for i in range(3) for j in range(3))
 
+
+used_questions = set()
+
 def ask_question():
-    question, answer = random.choice(questions)
+    global used_questions
+    if len(used_questions) == len(questions):
+        used_questions.clear()
+        messagebox.showinfo("Question bank full")
+    while True:
+        q, a = random.choice(questions)
+        if q not in used_questions:
+            used_questions.add(q)
+            break
+
+    question, answer = q, a
     ans = simpledialog.askstring(
         f"GK Question for Player {player}",
         f"Get this question correct to place a marker!\n\n{question}"
     )
+
     if ans is None:
         choice = messagebox.askquestion(
             "Cancel Detected",
@@ -187,18 +202,26 @@ def ask_question():
             return False
 
     ans = ans.strip().lower()
-
     if isinstance(answer, list):
         correct = any(ans == a.strip().lower() for a in answer)
+        correct_answers = [a.strip().title() for a in answer]
     else:
         correct = ans == answer.strip().lower()
+        correct_answers = [answer.strip().title()]
 
     if correct:
-        messagebox.showinfo("Correct", f"Damn ok, I'm surprised u had it in u! Marker secured ")
+        messagebox.showinfo("Correct", "Damn ok, I'm surprised u had it in u! Marker secured ")
         return True
     else:
-        messagebox.showinfo("Wrong", f"Player{player}... Honestly, I ain't even surprised — you're wrong mf ")
+        correct_display = ", ".join(correct_answers)
+        messagebox.showinfo(
+            "Wrong",
+            f"Player{player}... Honestly, I ain't even surprised — you're wrong mf \n\n"
+            f"The correct answer was: {correct_display}"
+        )
         return False
+
+
 
 def shuffle_markers(opponent):
     
@@ -227,7 +250,7 @@ def shuffle_markers(opponent):
             board[ni][nj] = opponent
             buttons[ni][nj].config(text=opponent, state="disabled")
 
-    messagebox.showinfo("CHAOS!!", f"😈 Player{opponent}'s markers have been shuffled across the board!")
+    messagebox.showinfo("CHAOS!!", f" Player{opponent}'s markers have been shuffled across the board! CHAOS TIME!")
     for i in range(3):
         for j in range(3):
             if board[i][j] == " ":
