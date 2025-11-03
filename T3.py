@@ -2,7 +2,6 @@ import random
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
-# --- QUESTIONS ---
 questions = [
     ("What is the capital of Zambia", "lusaka"),
     ("Who painted the Mona Lisa", ["leonardo da vinci","da vinci"]),
@@ -23,7 +22,7 @@ questions = [
     ("Which country is known as the Land of the Rising Sun", "japan"),
     ("Which is the largest desert in the world", ["antarctic","antarctic desert"]),
     ("In which country were the Olympic Games invented", "greece"),
-    ("Who was the first man to walk on the moon", "neil armstrong"),
+    ("Who was the first man to walk on the moon", ["neil armstrong","armstrong"]),
     ("Which is the largest mammal in the world", "blue whale"),
     ("What is the smallest prime number", "2"),
     ("What is the currency of the United Kingdom", ["pound","pound sterling"]),
@@ -59,7 +58,7 @@ questions = [
     ("Which ocean lies between Africa and Australia", ["indian ocean","indian"]),
     ("How many days are there in a leap year", "366"),
     ("What is the capital of Germany", "berlin"),
-    ("Who was the first person to climb Mount Everest", "edmund hillary"),
+    ("Who was the first person to climb Mount Everest", ["edmund hillary","hillary"]),
     ("Which organ purifies blood in the human body", "kidney"),
     ("What is the national flower of Japan", "cherry blossom"),
     ("Which planet is known as the Morning Star", "venus"),
@@ -89,10 +88,10 @@ questions = [
     ("Which city hosted the 2020 Summer Olympics", "tokyo"),
     ("What is the main gas found in Earth's atmosphere", "nitrogen"),
     ("What is the capital of Brazil", "brasilia"),
-    ("Who discovered America", ["christopher columbus","leif erikson"]),
+    ("Who discovered America", ["christopher columbus","leif erikson","columbus"]),
     ("What is the capital of Argentina", "buenos aires"),
     ("Which country has the Great Barrier Reef", "australia"),
-    ("Who wrote the national anthem of India", "rabindranath tagore"),
+    ("Who wrote the national anthem of India", ["rabindranath tagore","tagore"]),
     ("Name one of the three capitals of South Africa", ["pretoria","cape town","bloemfontein"]),
     ("Which is the hottest planet in our solar system", "venus"),
     ("What is the largest island in the world", "greenland"),
@@ -118,25 +117,23 @@ bank_O = 0
 used_questions = set()
 score_X = 0
 score_O = 0
-
+markers_placed_X = 0
+markers_placed_O = 0
 
 root = tk.Tk()
 root.title("T3: Tic Tac Twist")
 root.configure(bg="#121212")
 
-
 instructions = (
     " HOW TO PLAY T3: TIC TAC TWIST \n\n"
-    "1. Answer GK questions to earn your move.\n"
-    "2. Wrong = Lose your turn.\n"
-    "3. You can place, bank, or use chaos (shuffles opponent markers).\n"
-    "4. Banking gives you a second marker later.\n"
-    "5. 3 in a row = Win.\n\n"
-    "Welcome to T3 — where knowledge meets chaos."
+    "1. Answer the questions to earn your move.\n"
+    "2. Wrong = Lose your turn.Ain't no mercy here\n"
+    "3. You can place your move or bank it.\n"
+    "4. Banking gives you a chance to place a second marker later.But beware...chaos exists...\n"
+    "Welcome to T3 — where knowledge meets chaos. A game by Sammy boy"
 )
-messagebox.showinfo("How to Play", instructions)
+messagebox.showinfo("READ THIS SHIT", instructions)
 messagebox.showinfo("Coin Toss", f"Coin toss result: Player {player} starts!")
-
 
 label = tk.Label(root, text=f"Player {player}, it's your turn! Pls dont embarrass me and yourself", font=("Arial", 16, "bold"),
                  fg="white", bg="#222222", pady=10)
@@ -159,7 +156,6 @@ frame = tk.Frame(root, bg="#121212")
 frame.pack(pady=10)
 buttons = [[None for _ in range(3)] for _ in range(3)]
 
-# --- HELPER FUNCTIONS ---
 def update_banks():
     bank_x_label.config(text=f"Player X Banked: {'✅' if bank_X else '❌'}")
     bank_o_label.config(text=f"Player O Banked: {'✅' if bank_O else '❌'}")
@@ -196,9 +192,30 @@ def ask_question():
             used_questions.add(q)
             break
 
-    ans = simpledialog.askstring(f" Question for Player {player}", f"{q}")
+    # Larger custom window for asking the question
+    question_window = tk.Toplevel(root)
+    question_window.title(f"Question for Player {player}")
+    question_window.geometry("400x250")
+    question_window.config(bg="#222222")
 
-    if ans is None:
+    label_q = tk.Label(question_window, text=q, wraplength=350, fg="white", bg="#222222", font=("Arial", 12))
+    label_q.pack(pady=20)
+
+    answer_var = tk.StringVar()
+    entry = tk.Entry(question_window, textvariable=answer_var, font=("Arial", 12), width=30)
+    entry.pack(pady=10)
+    entry.focus()
+
+    def submit():
+        question_window.destroy()
+
+    submit_btn = tk.Button(question_window, text="Submit", command=submit, font=("Arial", 11))
+    submit_btn.pack(pady=10)
+
+    root.wait_window(question_window)
+    ans = answer_var.get().strip().lower()
+
+    if not ans:
         choice = messagebox.askquestion("Cancel Detected", "Do u wanna pick another spot instead?")
         if choice == "yes":
             return None
@@ -207,7 +224,6 @@ def ask_question():
             root.destroy()
             return False
 
-    ans = ans.strip().lower()
     if isinstance(a, list):
         correct = any(ans == x.strip().lower() for x in a)
         correct_display = ", ".join([x.title() for x in a])
@@ -222,25 +238,35 @@ def ask_question():
         messagebox.showinfo("Wrong", f"Incorrect.Pls go read some books and watch the news. The correct answer was: {correct_display}")
         return False
 
-def shuffle_markers(opponent):
-    positions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == opponent]
-    empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
-    if not positions:
-        messagebox.showinfo("Chaos", f"Player {opponent} had no markers. Nothing to shuffle. What a waste")
-        return
-    random.shuffle(positions)
-    random.shuffle(empties)
-    moves = min(len(positions), len(empties))
-    for i, j in positions[:moves]:
-        board[i][j] = " "
-        buttons[i][j].config(text=" ")
-    for k in range(moves):
-        ni, nj = empties[k]
-        board[ni][nj] = opponent
-        buttons[ni][nj].config(text=opponent, fg="#f54242" if opponent == "X" else "#4bf542", state="disabled")
+
+def shuffle_both_players():
+    players = ["X", "O"]
+    for p in players:
+        positions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == p]
+        empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
+        if not positions:
+            continue
+        random.shuffle(positions)
+        random.shuffle(empties)
+        moves = min(len(positions), len(empties))
+        for i, j in positions[:moves]:
+            board[i][j] = " "
+            buttons[i][j].config(text=" ")
+        for k in range(moves):
+            ni, nj = empties[k]
+            board[ni][nj] = p
+            buttons[ni][nj].config(text=p, fg="#f54242" if p == "X" else "#4bf542", state="disabled")
+
     root.config(bg="#550000")
-    root.after(250, lambda: root.config(bg="#121212"))
-    messagebox.showinfo("Chaos timeee", f"Player {opponent}'s markers have been shuffled. LOL")
+    root.after(300, lambda: root.config(bg="#121212"))
+
+    # Fix: make sure empty cells are clickable again
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == " ":
+                buttons[i][j].config(state="normal")
+
+    messagebox.showinfo("CHAOS TIME", "Markers shuffled!")
 
 def relocate_if_conflict(r, c, player):
     opponent = "O" if player == "X" else "X"
@@ -254,10 +280,10 @@ def relocate_if_conflict(r, c, player):
         buttons[r][c].config(text=" ")
 
 def make_move(r, c):
-    global player, bank_X, bank_O, score_X, score_O
+    global player, bank_X, bank_O, score_X, score_O, markers_placed_X, markers_placed_O
 
     if board[r][c] != " ":
-        messagebox.showinfo("Taken", "Spot already taken.")
+        messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
         return
 
     result = ask_question()
@@ -268,20 +294,24 @@ def make_move(r, c):
     current_bank = bank_X if player == "X" else bank_O
     opponent = "O" if player == "X" else "X"
 
-    if current_bank == 1:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now(please do)?")
+    total_X = sum(cell == "X" for row in board for cell in row)
+    total_O = sum(cell == "O" for row in board for cell in row)
+    can_use_bank = (total_X >= 2 and total_O >= 2)
+
+    if current_bank == 1 and can_use_bank:
+        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now(Please do)?")
         if action == "yes":
-            shuffle_markers(opponent)
+            shuffle_both_players()
             relocate_if_conflict(r, c, player)
             board[r][c] = player
-            buttons[r][c].config(text=player, fg="#f54242" if player == "X" else "#42f566", state="disabled")
+            buttons[r][c].config(text=player, fg="#f5f542" if player == "X" else "#42f5c5", state="disabled")
             messagebox.showinfo("Second Move", f"Player {player}, place your second marker for your banked move.")
 
             def second_click(rr, cc):
                 if board[rr][cc] in [" ", opponent]:
                     relocate_if_conflict(rr, cc, player)
                     board[rr][cc] = player
-                    buttons[rr][cc].config(text=player, fg="#f54242" if player == "X" else "#42f566", state="disabled")
+                    buttons[rr][cc].config(text=player, fg="#f5f542" if player == "X" else "#42f5c5", state="disabled")
                     if player == "X":
                         bank_X = 0
                     else:
@@ -293,7 +323,7 @@ def make_move(r, c):
                         return
                     switch_turn()
                 else:
-                    messagebox.showinfo("Invalid,are you dumb?", "Spot is taken you fool.")
+                    messagebox.showinfo("Invalid", "Spot is taken. Please go to an optician,you need an eye test")
 
             for i in range(3):
                 for j in range(3):
@@ -302,7 +332,8 @@ def make_move(r, c):
         else:
             board[r][c] = player
             buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
-    else:
+
+    elif (player == "X" and not bank_X) or (player == "O" and not bank_O):
         choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later?")
         if choice == "yes":
             if player == "X":
@@ -316,11 +347,14 @@ def make_move(r, c):
         else:
             board[r][c] = player
             buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
+    else:
+        # If they already have a banked move, just place normally
+        board[r][c] = player
+        buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
 
     if check_winner(player):
         declare_winner(player)
         return
-    
     if is_draw():
         messagebox.showinfo("Draw", "Fuck,need to rerun this code")
         reset_board()
@@ -358,7 +392,6 @@ def reset_board():
             buttons[i][j].config(text=" ", state="normal")
     player = random.choice(["X", "O"])
     update_turn_label()
-
 
 for i in range(3):
     for j in range(3):
