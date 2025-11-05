@@ -43,7 +43,7 @@ questions = [
     ("How many players are there in a football team", ["11","eleven"]),
     ("Which metal is liquid at room temperature", "mercury"),
     ("What is the fastest land animal", "cheetah"),
-    ("Who discovered penicillin", "alexander fleming"),
+    ("Who discovered penicillin", ["alexander fleming","fleming"]),
     ("Which city will host the 2028 Summer Olympics", "los angeles"),
     ("What is the largest planet in our solar system", "jupiter"),
     ("Which instrument measures temperature", "thermometer"),
@@ -192,7 +192,6 @@ def ask_question():
             used_questions.add(q)
             break
 
-    # Larger custom window for asking the question
     question_window = tk.Toplevel(root)
     question_window.title(f"Question for Player {player}")
     question_window.geometry("400x250")
@@ -241,32 +240,40 @@ def ask_question():
 
 def shuffle_both_players():
     players = ["X", "O"]
-    for p in players:
-        positions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == p]
-        empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
-        if not positions:
-            continue
-        random.shuffle(positions)
-        random.shuffle(empties)
-        moves = min(len(positions), len(empties))
-        for i, j in positions[:moves]:
-            board[i][j] = " "
-            buttons[i][j].config(text=" ")
-        for k in range(moves):
-            ni, nj = empties[k]
-            board[ni][nj] = p
-            buttons[ni][nj].config(text=p, fg="#f54242" if p == "X" else "#4bf542", state="disabled")
+    reshuffle_limit = 20  
+    attempt = 0
 
-    root.config(bg="#550000")
-    root.after(300, lambda: root.config(bg="#121212"))
+    while True:
+        attempt += 1
+        old_board = [row[:] for row in board]
 
-    # Fix: make sure empty cells are clickable again
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] != " ":
+                    board[i][j] = " "
+                    buttons[i][j].config(text=" ")
+        for p in players:
+            positions = [(i, j) for i in range(3) for j in range(3) if old_board[i][j] == p]
+            empties = [(i, j) for i in range(3) for j in range(3)]
+            random.shuffle(positions)
+            random.shuffle(empties)
+            moves = min(len(positions), len(empties))
+            for k in range(moves):
+                ni, nj = empties[k]
+                board[ni][nj] = p
+                buttons[ni][nj].config(text=p, fg="#f54242" if p == "X" else "#4bf542", state="disabled")
+
+        if not (check_winner("X") or check_winner("O")) or attempt >= reshuffle_limit:
+            break
     for i in range(3):
         for j in range(3):
             if board[i][j] == " ":
                 buttons[i][j].config(state="normal")
 
-    messagebox.showinfo("CHAOS TIME", "Markers shuffled!")
+    root.config(bg="#550000")
+    root.after(300, lambda: root.config(bg="#121212"))
+    messagebox.showinfo("CHAOS TIME", "Markers shuffled (but no instant wins this time)!")
+
 
 def relocate_if_conflict(r, c, player):
     opponent = "O" if player == "X" else "X"
@@ -305,6 +312,11 @@ def make_move(r, c):
             relocate_if_conflict(r, c, player)
             board[r][c] = player
             buttons[r][c].config(text=player, fg="#f5f542" if player == "X" else "#42f5c5", state="disabled")
+            if player == "X":
+                bank_X = 0
+            else:
+                bank_O = 0
+            update_banks()
             messagebox.showinfo("Second Move", f"Player {player}, place your second marker for your banked move.")
 
             def second_click(rr, cc):
