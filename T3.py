@@ -62,7 +62,7 @@ questions = [
     ("Which organ purifies blood in the human body", "kidney"),
     ("What is the national flower of Japan", "cherry blossom"),
     ("Which planet is known as the Morning Star", "venus"),
-    ("Who invented the light bulb", "thomas edison"),
+    ("Who invented the light bulb", ["thomas edison","edison"]),
     ("What is the largest continent in the world", "asia"),
     ("Which country has the most population", "india"),
     ("What is the capital of South Korea", "seoul"),
@@ -119,6 +119,7 @@ score_X = 0
 score_O = 0
 markers_placed_X = 0
 markers_placed_O = 0
+shuffled_this_turn=False
 
 root = tk.Tk()
 root.title("T3: Tic Tac Twist")
@@ -287,7 +288,7 @@ def relocate_if_conflict(r, c, player):
         buttons[r][c].config(text=" ")
 
 def make_move(r, c):
-    global player, bank_X, bank_O, score_X, score_O, markers_placed_X, markers_placed_O
+    global player, bank_X, bank_O, score_X, score_O, markers_placed_X, markers_placed_O,shuffled_this_turn
 
     if board[r][c] != " ":
         messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
@@ -308,39 +309,58 @@ def make_move(r, c):
     if current_bank == 1 and can_use_bank:
         action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now(Please do)?")
         if action == "yes":
-            shuffle_both_players()
+            if not shuffled_this_turn:
+                shuffle_both_players()
+                shuffled_this_turn = True
+
+        # Place the first marker after the shuffle
             relocate_if_conflict(r, c, player)
             board[r][c] = player
-            buttons[r][c].config(text=player, fg="#f5f542" if player == "X" else "#42f5c5", state="disabled")
+            buttons[r][c].config(
+                text=player,
+                fg="#f5f542" if player == "X" else "#42f5c5",
+                state="disabled"
+            )
+
+        # Mark that the banked move was used
             if player == "X":
                 bank_X = 0
             else:
                 bank_O = 0
             update_banks()
-            messagebox.showinfo("Second Move", f"Player {player}, place your second marker for your banked move.")
+
+            messagebox.showinfo(
+                "Second Move",
+                f"Player {player}, place your second marker for your banked move (no more shuffle this time)."
+            )
 
             def second_click(rr, cc):
+                global shuffled_this_turn
                 if board[rr][cc] in [" ", opponent]:
                     relocate_if_conflict(rr, cc, player)
                     board[rr][cc] = player
-                    buttons[rr][cc].config(text=player, fg="#f5f542" if player == "X" else "#42f5c5", state="disabled")
-                    if player == "X":
-                        bank_X = 0
-                    else:
-                        bank_O = 0
-                    update_banks()
+                    buttons[rr][cc].config(
+                        text=player,
+                        fg="#f5f542" if player == "X" else "#42f5c5",
+                        state="disabled"
+                    )
                     restore_main_commands()
+
                     if check_winner(player):
                         declare_winner(player)
+                        shuffled_this_turn=False
                         return
                     switch_turn()
+                    shuffled_this_turn=False
                 else:
-                    messagebox.showinfo("Invalid", "Spot is taken. Please go to an optician,you need an eye test")
+                    messagebox.showinfo("Invalid", "Spot is taken. Please go to an optician—you need an eye test.")
 
             for i in range(3):
                 for j in range(3):
                     buttons[i][j].config(command=lambda rr=i, cc=j: second_click(rr, cc))
+
             return
+
         else:
             board[r][c] = player
             buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
@@ -360,7 +380,6 @@ def make_move(r, c):
             board[r][c] = player
             buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
     else:
-        # If they already have a banked move, just place normally
         board[r][c] = player
         buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
 
@@ -389,7 +408,10 @@ def declare_winner(p):
         score_X += 1
     else:
         score_O += 1
+    bank_X=0
+    bank_O=0
     update_score()
+    update_banks()
     again = messagebox.askyesno("Winner winner chicken dinner", f"Player {p} wins!\nPlay again?")
     if again:
         reset_board()
@@ -397,11 +419,14 @@ def declare_winner(p):
         root.destroy()
 
 def reset_board():
-    global board, player
+    global board, player, bank_X, bank_O
     board = [[" " for _ in range(3)] for _ in range(3)]
     for i in range(3):
         for j in range(3):
             buttons[i][j].config(text=" ", state="normal")
+    bank_X = 0
+    bank_O = 0
+    update_banks()
     player = random.choice(["X", "O"])
     update_turn_label()
 
