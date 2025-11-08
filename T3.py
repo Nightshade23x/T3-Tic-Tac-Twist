@@ -54,7 +54,7 @@ questions = [
     ("What is the capital of Egypt", "cairo"),
     ("What is the boiling point of water in Celsius", "100"),
     ("Which is the longest bone in the human body", "femur"),
-    ("Who is known as the Father of Computers", "charles babbage"),
+    ("Who is known as the Father of Computers", ["charles babbage","babbage"]),
     ("Which ocean lies between Africa and Australia", ["indian ocean","indian"]),
     ("How many days are there in a leap year", "366"),
     ("What is the capital of Germany", "berlin"),
@@ -122,40 +122,143 @@ markers_placed_O = 0
 shuffled_this_turn=False
 
 root = tk.Tk()
+root.overrideredirect(True)
+root.withdraw()
 root.title("T3: Tic Tac Twist")
 root.configure(bg="#121212")
+
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+app_width = int(screen_width * 0.8)
+app_height = int(screen_height * 0.8)
+x_pos = (screen_width // 2) - (app_width // 2)
+y_pos = (screen_height // 2) - (app_height // 2)
+root.geometry(f"{app_width}x{app_height}+{x_pos}+{y_pos}")
+
 
 instructions = (
     " HOW TO PLAY T3: TIC TAC TWIST \n\n"
     "1. Answer the questions to earn your move.\n"
     "2. Wrong = Lose your turn.Ain't no mercy here\n"
     "3. You can place your move or bank it.\n"
-    "4. Banking gives you a chance to place a second marker later.But beware...chaos exists...\n"
+    "4. Banking gives you a chance to place a second marker later.But beware...chaos exists...\n" \
+    "Short word on chaos:if all combinations lead to an easy win,then random wipeout occurs!"
     "Welcome to T3 — where knowledge meets chaos. A game by Sammy boy"
 )
-messagebox.showinfo("READ THIS SHIT", instructions)
-messagebox.showinfo("Coin Toss", f"Coin toss result: Player {player} starts!")
+def coin_toss_animation():
+    toss_window = tk.Toplevel(root)
+    toss_window.title("Coin Toss")
+    toss_window.geometry("400x200")
+    toss_window.configure(bg="#111111")
 
-label = tk.Label(root, text=f"Player {player}, it's your turn! Pls dont embarrass me and yourself", font=("Arial", 16, "bold"),
-                 fg="white", bg="#222222", pady=10)
-label.pack(fill="x")
+    toss_label = tk.Label(toss_window, text="Flipping...", font=("Arial", 20, "bold"),
+                          fg="white", bg="#111111")
+    toss_label.pack(expand=True)
 
-score_label = tk.Label(root, text="Score — X: 0 | O: 0", font=("Arial", 13),
-                       fg="white", bg="#121212")
-score_label.pack()
+    results = ["Heads", "Tails"]
 
-status_frame = tk.Frame(root, bg="#121212")
-status_frame.pack(pady=5)
-bank_x_label = tk.Label(status_frame, text="Player X Banked: ❌", font=("Arial", 12),
-                        fg="#ff6666", bg="#121212")
-bank_x_label.grid(row=0, column=0, padx=10)
-bank_o_label = tk.Label(status_frame, text="Player O Banked: ❌", font=("Arial", 12),
-                        fg="#66b3ff", bg="#121212")
-bank_o_label.grid(row=0, column=1, padx=10)
+    def animate(count=0):
+        if count < 15:  
+            toss_label.config(text=random.choice(results))
+            toss_window.after(80, animate, count + 1)
+        else:
+            toss_label.config(text=f"Player {player} starts!", fg="#00ff66")
+            toss_window.after(1200, toss_window.destroy)
 
-frame = tk.Frame(root, bg="#121212")
-frame.pack(pady=10)
-buttons = [[None for _ in range(3)] for _ in range(3)]
+    animate()
+    root.wait_window(toss_window)
+
+def show_instructions():
+    # Create a separate top-level window
+    inst = tk.Toplevel()
+    inst.title("READ THIS SHIT")
+    inst.configure(bg="#111111")
+
+    # Make it appear in the center
+    inst.geometry("800x600")
+    inst.grab_set()  # Prevents interaction with root until closed
+    inst.focus_force()
+
+    # Create a frame for text and scrollbar
+    frame = tk.Frame(inst, bg="#111111")
+    frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+    text = tk.Text(
+        frame,
+        wrap="word",
+        font=("Arial", 13),
+        fg="white",
+        bg="#111111",
+        relief="flat",
+        padx=10,
+        pady=10,
+    )
+    text.insert("1.0", instructions)
+    text.config(state="disabled")
+    text.pack(fill="both", expand=True)
+
+    # Add a clear, visible OK button
+    btn_frame = tk.Frame(inst, bg="#111111")
+    btn_frame.pack(pady=15)
+    ok_btn = tk.Button(
+        btn_frame,
+        text="OK, LET'S PLAY",
+        command=lambda: [inst.destroy(), start_game_ui()],
+        font=("Arial", 14, "bold"),
+        bg="#00cc66",
+        fg="black",
+        width=15,
+        height=1,
+    )
+    ok_btn.pack()
+
+    # Ensure the instruction window is above everything
+    inst.lift()
+    inst.attributes('-topmost', True)
+    inst.after_idle(inst.attributes, '-topmost', False)
+
+
+def start_game_ui():
+    global label, score_label, status_frame, bank_x_label, bank_o_label, frame, buttons
+    coin_toss_animation()
+    root.deiconify()
+    root.overrideredirect(False)
+    label = tk.Label(root, text=f"Player {player}, it's your turn! Pls dont embarrass me and yourself",
+                     font=("Arial", 16, "bold"), fg="white", bg="#222222", pady=10)
+    label.pack(fill="x")
+
+    score_label = tk.Label(root, text="Score — X: 0 | O: 0", font=("Arial", 13),
+                           fg="white", bg="#121212")
+    score_label.pack()
+
+    status_frame = tk.Frame(root, bg="#121212")
+    status_frame.pack(pady=5)
+    bank_x_label = tk.Label(status_frame, text="Player X Banked: ❌", font=("Arial", 12),
+                            fg="#ff6666", bg="#121212")
+    bank_x_label.grid(row=0, column=0, padx=10)
+    bank_o_label = tk.Label(status_frame, text="Player O Banked: ❌", font=("Arial", 12),
+                            fg="#66b3ff", bg="#121212")
+    bank_o_label.grid(row=0, column=1, padx=10)
+
+    # ✅ Create button list first
+    frame = tk.Frame(root, bg="#121212")
+    frame.pack(pady=10)
+    buttons = [[None for _ in range(3)] for _ in range(3)]
+
+    # ✅ Now build the grid
+    for i in range(3):
+        for j in range(3):
+            b = tk.Button(frame, text=" ", font=("Arial", 22, "bold"),
+                          width=5, height=2, bg="#1f1f1f", fg="white",
+                          activebackground="#444444", relief="ridge", bd=3,
+                          command=lambda r=i, c=j: make_move(r, c))
+            b.grid(row=i, column=j, padx=5, pady=5)
+            buttons[i][j] = b
+
+    update_banks()
+    update_turn_label()
+
+
 
 def update_banks():
     bank_x_label.config(text=f"Player X Banked: {'✅' if bank_X else '❌'}")
@@ -195,7 +298,7 @@ def ask_question():
 
     question_window = tk.Toplevel(root)
     question_window.title(f"Question for Player {player}")
-    question_window.geometry("400x250")
+    question_window.geometry("700x400")
     question_window.config(bg="#222222")
 
     label_q = tk.Label(question_window, text=q, wraplength=350, fg="white", bg="#222222", font=("Arial", 12))
@@ -241,30 +344,47 @@ def ask_question():
 
 def shuffle_both_players():
     players = ["X", "O"]
-    reshuffle_limit = 20  
+    reshuffle_limit = 50  
     attempt = 0
 
     while True:
         attempt += 1
         old_board = [row[:] for row in board]
-
         for i in range(3):
             for j in range(3):
                 if board[i][j] != " ":
                     board[i][j] = " "
                     buttons[i][j].config(text=" ")
+
         for p in players:
             positions = [(i, j) for i in range(3) for j in range(3) if old_board[i][j] == p]
             empties = [(i, j) for i in range(3) for j in range(3)]
             random.shuffle(positions)
             random.shuffle(empties)
-            moves = min(len(positions), len(empties))
-            for k in range(moves):
+
+            for k in range(min(len(positions), len(empties))):
                 ni, nj = empties[k]
                 board[ni][nj] = p
-                buttons[ni][nj].config(text=p, fg="#f54242" if p == "X" else "#4bf542", state="disabled")
+                buttons[ni][nj].config(
+                    text=p,
+                    fg="#f54242" if p == "X" else "#4bf542",
+                    state="disabled"
+                )
 
-        if not (check_winner("X") or check_winner("O")) or attempt >= reshuffle_limit:
+        if not check_winner("X") and not check_winner("O"):
+            break
+
+        if attempt >= reshuffle_limit:
+            for p in ["X", "O"]:
+                markers = [(i, j) for i in range(3) for j in range(3) if board[i][j] == p]
+                if markers:
+                    r, c = random.choice(markers)
+                    board[r][c] = " "
+                    buttons[r][c].config(text=" ", state="normal")
+            messagebox.showinfo(
+                "CHAOS WIPEOUT!",
+                "Every chaos combination leads to the markers lining up for a win,so one random marker from both players gets wiped out"
+            )
             break
     for i in range(3):
         for j in range(3):
@@ -273,7 +393,9 @@ def shuffle_both_players():
 
     root.config(bg="#550000")
     root.after(300, lambda: root.config(bg="#121212"))
-    messagebox.showinfo("CHAOS TIME", "Markers shuffled (but no instant wins this time)!")
+
+    messagebox.showinfo("CHAOS TIME", "Markers shuffled!!!")
+
 
 
 def relocate_if_conflict(r, c, player):
@@ -313,7 +435,6 @@ def make_move(r, c):
                 shuffle_both_players()
                 shuffled_this_turn = True
 
-        # Place the first marker after the shuffle
             relocate_if_conflict(r, c, player)
             board[r][c] = player
             buttons[r][c].config(
@@ -322,7 +443,6 @@ def make_move(r, c):
                 state="disabled"
             )
 
-        # Mark that the banked move was used
             if player == "X":
                 bank_X = 0
             else:
@@ -331,7 +451,7 @@ def make_move(r, c):
 
             messagebox.showinfo(
                 "Second Move",
-                f"Player {player}, place your second marker for your banked move (no more shuffle this time)."
+                f"Player {player}, place your second marker for your banked move"
             )
 
             def second_click(rr, cc):
@@ -430,15 +550,8 @@ def reset_board():
     player = random.choice(["X", "O"])
     update_turn_label()
 
-for i in range(3):
-    for j in range(3):
-        b = tk.Button(frame, text=" ", font=("Arial", 22, "bold"),
-                      width=5, height=2, bg="#1f1f1f", fg="white",
-                      activebackground="#444444", relief="ridge", bd=3,
-                      command=lambda r=i, c=j: make_move(r, c))
-        b.grid(row=i, column=j, padx=5, pady=5)
-        buttons[i][j] = b
 
-update_banks()
-update_turn_label()
+
+show_instructions()
+root.wait_window()
 root.mainloop()
