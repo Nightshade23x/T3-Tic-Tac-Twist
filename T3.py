@@ -169,17 +169,14 @@ def coin_toss_animation():
     root.wait_window(toss_window)
 
 def show_instructions():
-    # Create a separate top-level window
+
     inst = tk.Toplevel()
     inst.title("READ THIS SHIT")
     inst.configure(bg="#111111")
 
-    # Make it appear in the center
     inst.geometry("800x600")
-    inst.grab_set()  # Prevents interaction with root until closed
+    inst.grab_set()  
     inst.focus_force()
-
-    # Create a frame for text and scrollbar
     frame = tk.Frame(inst, bg="#111111")
     frame.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -197,7 +194,6 @@ def show_instructions():
     text.config(state="disabled")
     text.pack(fill="both", expand=True)
 
-    # Add a clear, visible OK button
     btn_frame = tk.Frame(inst, bg="#111111")
     btn_frame.pack(pady=15)
     ok_btn = tk.Button(
@@ -212,7 +208,6 @@ def show_instructions():
     )
     ok_btn.pack()
 
-    # Ensure the instruction window is above everything
     inst.lift()
     inst.attributes('-topmost', True)
     inst.after_idle(inst.attributes, '-topmost', False)
@@ -240,12 +235,12 @@ def start_game_ui():
                             fg="#66b3ff", bg="#121212")
     bank_o_label.grid(row=0, column=1, padx=10)
 
-    # ✅ Create button list first
+    
     frame = tk.Frame(root, bg="#121212")
     frame.pack(pady=10)
     buttons = [[None for _ in range(3)] for _ in range(3)]
 
-    # ✅ Now build the grid
+    
     for i in range(3):
         for j in range(3):
             b = tk.Button(frame, text=" ", font=("Arial", 22, "bold"),
@@ -266,9 +261,9 @@ def update_banks():
 
 def update_turn_label():
     if player == "X":
-        label.config(text=f"Player X, it's your turn,time to shine", bg="#330000")
+        label.config(text=f"Player X, it's your turn,time to shine my guy", bg="#330000")
     else:
-        label.config(text=f"Player O, it's your turn,time to shine", bg="#001a33")
+        label.config(text=f"Player O, it's your turn,time to shine my guy", bg="#001a33")
 
 def update_score():
     score_label.config(text=f"Score — X: {score_X} | O: {score_O}")
@@ -549,8 +544,6 @@ def reset_board():
     update_banks()
     player = random.choice(["X", "O"])
     update_turn_label()
-
-
 
 show_instructions()
 root.wait_window()
