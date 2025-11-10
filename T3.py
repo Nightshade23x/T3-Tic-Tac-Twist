@@ -276,6 +276,56 @@ def check_winner(p):
         return True
     return False
 
+def highlight_winning_line(p):
+    """Draws an animated line across the 3 markers forming the win."""
+    # Create transparent overlay
+    canvas = tk.Canvas(frame, width=frame.winfo_width(), height=frame.winfo_height(),
+                       highlightthickness=0, bg="", bd=0)
+    canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+    # Get approximate cell size
+    frame.update_idletasks()
+    cell_size = buttons[0][0].winfo_width() + 10
+    gap = 5
+    winning_coords = None
+
+    # Row win
+    for i in range(3):
+        if all(board[i][j] == p for j in range(3)):
+            y = i * (cell_size + gap) + cell_size // 2
+            winning_coords = (0, y, 3 * cell_size, y)
+            break
+    # Column win
+    for j in range(3):
+        if all(board[i][j] == p for i in range(3)):
+            x = j * (cell_size + gap) + cell_size // 2
+            winning_coords = (x, 0, x, 3 * cell_size)
+            break
+    # Diagonal wins
+    if all(board[i][i] == p for i in range(3)):
+        winning_coords = (0, 0, 3 * cell_size, 3 * cell_size)
+    elif all(board[i][2 - i] == p for i in range(3)):
+        winning_coords = (3 * cell_size, 0, 0, 3 * cell_size)
+
+    if winning_coords:
+        x1, y1, x2, y2 = winning_coords
+        color = "#f54242" if p == "X" else "#4bf542"
+
+        # Animate the line growing across
+        steps = 25
+        for step in range(steps + 1):
+            canvas.delete("line")
+            x_end = x1 + (x2 - x1) * (step / steps)
+            y_end = y1 + (y2 - y1) * (step / steps)
+            canvas.create_line(x1, y1, x_end, y_end, width=8, fill=color, tags="line")
+            canvas.lift()  # keep it above buttons
+            canvas.update()
+            canvas.after(20)
+
+        # Keep the line visible briefly, then remove
+        root.after(1200, canvas.destroy)
+
+
 def is_draw():
     return all(board[i][j] != " " for i in range(3) for j in range(3))
 
@@ -341,6 +391,25 @@ def shuffle_both_players():
     players = ["X", "O"]
     reshuffle_limit = 50  
     attempt = 0
+    global shuffled_this_turn
+
+    def almost_winning(p):
+
+        for i in range(3):
+            row = [board[i][j] for j in range(3)]
+            col = [board[j][i] for j in range(3)]
+            if row.count(p) == 2 and row.count(" ") == 1:
+                return True
+            if col.count(p) == 2 and col.count(" ") == 1:
+                return True
+
+        diag1 = [board[i][i] for i in range(3)]
+        diag2 = [board[i][2 - i] for i in range(3)]
+        if diag1.count(p) == 2 and diag1.count(" ") == 1:
+            return True
+        if diag2.count(p) == 2 and diag2.count(" ") == 1:
+            return True
+        return False
 
     while True:
         attempt += 1
@@ -356,7 +425,6 @@ def shuffle_both_players():
             empties = [(i, j) for i in range(3) for j in range(3)]
             random.shuffle(positions)
             random.shuffle(empties)
-
             for k in range(min(len(positions), len(empties))):
                 ni, nj = empties[k]
                 board[ni][nj] = p
@@ -366,21 +434,26 @@ def shuffle_both_players():
                     state="disabled"
                 )
 
-        if not check_winner("X") and not check_winner("O"):
+        if not check_winner("X") and not check_winner("O") and not almost_winning("X") and not almost_winning("O"):
             break
 
         if attempt >= reshuffle_limit:
+            wiped_players = []  
             for p in ["X", "O"]:
                 markers = [(i, j) for i in range(3) for j in range(3) if board[i][j] == p]
                 if markers:
                     r, c = random.choice(markers)
                     board[r][c] = " "
                     buttons[r][c].config(text=" ", state="normal")
+                    wiped_players.append(p)
+
+            wiped_str = " and ".join(wiped_players) if len(wiped_players) == 2 else wiped_players[0]
             messagebox.showinfo(
                 "CHAOS WIPEOUT!",
-                "Every chaos combination leads to the markers lining up for a win,so one random marker from both players gets wiped out"
+                f"Random Wipeout has occurred! One marker from player(s) {wiped_str} has been wiped out to prevent an automatic win."
             )
             break
+
     for i in range(3):
         for j in range(3):
             if board[i][j] == " ":
@@ -389,8 +462,7 @@ def shuffle_both_players():
     root.config(bg="#550000")
     root.after(300, lambda: root.config(bg="#121212"))
 
-    messagebox.showinfo("CHAOS TIME", "Markers shuffled!!!")
-
+    messagebox.showinfo("CHAOS TIME", "Markers shuffled! Prepare for chaos 🔀")
 
 
 def relocate_if_conflict(r, c, player):
@@ -405,7 +477,7 @@ def relocate_if_conflict(r, c, player):
         buttons[r][c].config(text=" ")
 
 def make_move(r, c):
-    global player, bank_X, bank_O, score_X, score_O, markers_placed_X, markers_placed_O,shuffled_this_turn
+    global player, bank_X, bank_O, score_X, score_O, markers_placed_X, markers_placed_O, shuffled_this_turn
 
     if board[r][c] != " ":
         messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
@@ -424,7 +496,7 @@ def make_move(r, c):
     can_use_bank = (total_X >= 2 and total_O >= 2)
 
     if current_bank == 1 and can_use_bank:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now(Please do)?")
+        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now (Please do)?")
         if action == "yes":
             if not shuffled_this_turn:
                 shuffle_both_players()
@@ -444,10 +516,7 @@ def make_move(r, c):
                 bank_O = 0
             update_banks()
 
-            messagebox.showinfo(
-                "Second Move",
-                f"Player {player}, place your second marker for your banked move"
-            )
+            messagebox.showinfo("Second Move", f"Player {player}, place your second marker for your banked move")
 
             def second_click(rr, cc):
                 global shuffled_this_turn
@@ -460,20 +529,18 @@ def make_move(r, c):
                         state="disabled"
                     )
                     restore_main_commands()
-
                     if check_winner(player):
                         declare_winner(player)
-                        shuffled_this_turn=False
+                        shuffled_this_turn = False
                         return
                     switch_turn()
-                    shuffled_this_turn=False
+                    shuffled_this_turn = False
                 else:
                     messagebox.showinfo("Invalid", "Spot is taken. Please go to an optician—you need an eye test.")
 
             for i in range(3):
                 for j in range(3):
                     buttons[i][j].config(command=lambda rr=i, cc=j: second_click(rr, cc))
-
             return
 
         else:
@@ -481,6 +548,11 @@ def make_move(r, c):
             buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
 
     elif (player == "X" and not bank_X) or (player == "O" and not bank_O):
+        board[r][c] = player
+        buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
+        if check_winner(player):
+            declare_winner(player)
+            return
         choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later?")
         if choice == "yes":
             if player == "X":
@@ -491,18 +563,11 @@ def make_move(r, c):
             messagebox.showinfo("Banked", f"Player {player} banked their move.")
             switch_turn()
             return
-        else:
-            board[r][c] = player
-            buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
-    else:
-        board[r][c] = player
-        buttons[r][c].config(text=player, fg="#ffff99" if player == "X" else "#99ffff", state="disabled")
-
     if check_winner(player):
         declare_winner(player)
         return
     if is_draw():
-        messagebox.showinfo("Draw", "Fuck,need to rerun this code")
+        messagebox.showinfo("Draw", "Fuck, need to rerun this code")
         reset_board()
         return
     switch_turn()
@@ -523,6 +588,8 @@ def declare_winner(p):
         score_X += 1
     else:
         score_O += 1
+    highlight_winning_line(p)
+    root.update()
     bank_X=0
     bank_O=0
     update_score()
