@@ -336,43 +336,74 @@ def ask_question():
         used_questions.clear()
         messagebox.showinfo("Question Bank", "All questions used! Reloading...")
 
+    # Pick fresh question
     while True:
         q, a = random.choice(questions)
         if q not in used_questions:
             used_questions.add(q)
             break
 
+    timed_out = False  # <--- NEW FLAG
+
     question_window = tk.Toplevel(root)
     question_window.title(f"Question for Player {player}")
     question_window.geometry("700x400")
     question_window.config(bg="#222222")
 
-    label_q = tk.Label(question_window, text=q, wraplength=350, fg="white", bg="#222222", font=("Arial", 12))
+    label_q = tk.Label(question_window, text=q, wraplength=350,
+                       fg="white", bg="#222222", font=("Arial", 12))
     label_q.pack(pady=20)
 
+    # TIMER LABEL
+    timer_label = tk.Label(question_window, text="Time left: 20",
+                           fg="red", bg="#222222",
+                           font=("Arial", 14, "bold"))
+    timer_label.pack(pady=5)
+
     answer_var = tk.StringVar()
-    entry = tk.Entry(question_window, textvariable=answer_var, font=("Arial", 12), width=30)
+    entry = tk.Entry(question_window, textvariable=answer_var,
+                     font=("Arial", 12), width=30)
     entry.pack(pady=10)
     entry.focus()
 
+    time_left = 20
+
+    def countdown():
+        nonlocal time_left, timed_out
+        time_left -= 1
+
+        if time_left <= 0:
+            timed_out = True   # <--- IMPORTANT
+            timer_label.config(text="Time left: 0")
+            messagebox.showinfo("Time's Up!", "You ran out of time! Wrong answer.")
+            question_window.destroy()
+            return
+
+        timer_label.config(text=f"Time left: {time_left}")
+        question_window.after(1000, countdown)
+
+    countdown()
+
+    # Submit button
     def submit():
         question_window.destroy()
 
-    submit_btn = tk.Button(question_window, text="Submit", command=submit, font=("Arial", 11))
-    submit_btn.pack(pady=10)
+    tk.Button(question_window, text="Submit", command=submit,
+              font=("Arial", 11)).pack(pady=10)
 
     root.wait_window(question_window)
+
+    # ---- Handle Timeout ----
+    if timed_out:
+        return False   # Always wrong answer, never place marker
+
+    # ---- Normal Answer Handling ----
     ans = answer_var.get().strip().lower()
 
-    if not ans:
-        choice = messagebox.askquestion("Cancel Detected", "Do u wanna pick another spot instead?")
-        if choice == "yes":
-            return None
-        else:
-            messagebox.showinfo("Quit", "Game ended. I spent all this time coding just for cowards to jam")
-            root.destroy()
-            return False
+    if ans == "":
+        return False
 
+    # list of possible answers
     if isinstance(a, list):
         correct = any(ans == x.strip().lower() for x in a)
         correct_display = ", ".join([x.title() for x in a])
@@ -381,11 +412,13 @@ def ask_question():
         correct_display = a.title()
 
     if correct:
-        messagebox.showinfo("Correct!!!", "I didnt know u had it in u, marker earned,well done!.")
+        messagebox.showinfo("Correct!!!", "Marker earned!")
         return True
     else:
-        messagebox.showinfo("Wrong", f"Incorrect.Pls go read some books and watch the news. The correct answer was: {correct_display}")
+        messagebox.showinfo("Wrong",
+                            f"Incorrect. The correct answer was: {correct_display}")
         return False
+
 
 
 def shuffle_both_players():
@@ -586,7 +619,18 @@ def make_move(r, c):
         return
     if is_draw():
         messagebox.showinfo("Draw", "It's a draw! No more spaces left.")
-        reset_board()
+
+    # Give 1 point to both players
+        global score_X, score_O
+        score_X += 1
+        score_O += 1
+        update_score()
+
+        again = messagebox.askyesno("Draw", "It's a draw! Play again?")
+        if again:
+            reset_board()
+        else:
+            root.destroy()
         return
     switch_turn()
 
