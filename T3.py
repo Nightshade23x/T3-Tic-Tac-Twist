@@ -389,13 +389,22 @@ def ask_question():
 
 
 def shuffle_both_players():
-    players = ["X", "O"]
-    reshuffle_limit = 50  
-    attempt = 0
     global shuffled_this_turn
+    if shuffled_this_turn:
+        return
+    shuffled_this_turn = True
+
+    old_board = [row[:] for row in board]  # snapshot of original layout
+    # wipe board but NOT buttons (we'll repaint afterward)
+    for i in range(3):
+        for j in range(3):
+            board[i][j] = " "
+
+    players = ["X", "O"]
+    reshuffle_limit = 50
+    attempt = 0
 
     def almost_winning(p):
-
         for i in range(3):
             row = [board[i][j] for j in range(3)]
             col = [board[j][i] for j in range(3)]
@@ -403,7 +412,6 @@ def shuffle_both_players():
                 return True
             if col.count(p) == 2 and col.count(" ") == 1:
                 return True
-
         diag1 = [board[i][i] for i in range(3)]
         diag2 = [board[i][2 - i] for i in range(3)]
         if diag1.count(p) == 2 and diag1.count(" ") == 1:
@@ -412,89 +420,84 @@ def shuffle_both_players():
             return True
         return False
 
-    while True:
+    while attempt < reshuffle_limit:
         attempt += 1
-        old_board = [row[:] for row in board]
+
+        # start over clean
         for i in range(3):
             for j in range(3):
-                if board[i][j] != " ":
-                    board[i][j] = " "
-                    buttons[i][j].config(text=" ")
+                board[i][j] = " "
 
         for p in players:
-            positions = [(i, j) for i in range(3) for j in range(3) if old_board[i][j] == p]
-            empties = [(i, j) for i in range(3) for j in range(3)]
-            random.shuffle(positions)
+            markers = [(i, j) for i in range(3) for j in range(3) if old_board[i][j] == p]
+
+            empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]  
+            random.shuffle(markers)
             random.shuffle(empties)
-            for k in range(min(len(positions), len(empties))):
-                ni, nj = empties[k]
-                board[ni][nj] = p
-                buttons[ni][nj].config(
-                    text=p,
-                    fg="#f54242" if p == "X" else "#4bf542",
-                    state="disabled"
-                )
+
+            for (mr, mc), (er, ec) in zip(markers, empties):
+                board[er][ec] = p
 
         if not check_winner("X") and not check_winner("O") and not almost_winning("X") and not almost_winning("O"):
             break
 
-        if attempt >= reshuffle_limit:
-            wiped_players = []  
-            for p in ["X", "O"]:
-                markers = [(i, j) for i in range(3) for j in range(3) if board[i][j] == p]
-                if markers:
-                    r, c = random.choice(markers)
-                    board[r][c] = " "
-                    buttons[r][c].config(text=" ", state="normal")
-                    wiped_players.append(p)
-
-            wiped_str = " and ".join(wiped_players) if len(wiped_players) == 2 else wiped_players[0]
-            messagebox.showinfo(
-                "CHAOS WIPEOUT!",
-                f"Random Wipeout has occurred! One marker from player(s) {wiped_str} has been wiped out to prevent an automatic win."
-            )
-            break
-
+    # update UI
     for i in range(3):
         for j in range(3):
-            if board[i][j] == " ":
-                buttons[i][j].config(state="normal")
-
-    root.config(bg="#550000")
-    root.after(300, lambda: root.config(bg="#121212"))
+            cell = board[i][j]
+            if cell == " ":
+                buttons[i][j].config(text=" ", state="normal")
+            else:
+                buttons[i][j].config(
+                    text=cell,
+                    fg="#f54242" if cell == "X" else "#4bf542",
+                    state="disabled"
+                )
 
     messagebox.showinfo("CHAOS TIME", "Markers shuffled! Prepare for chaos 🔀")
 
 
 def relocate_if_conflict(r, c, player):
     opponent = "O" if player == "X" else "X"
-    if board[r][c] == opponent:
-        empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
-        if empties:
-            new_r, new_c = random.choice(empties)
-            board[new_r][new_c] = opponent
-            buttons[new_r][new_c].config(text=opponent, fg="#f54242" if opponent == "X" else "#4bf542", state="disabled")
-        board[r][c] = " "
-        buttons[r][c].config(text=" ")
+
+    # Only relocate if the tile actually contains opponent
+    if board[r][c] != opponent:
+        return
+
+    # Find empty cells
+    empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
+
+    if not empties:
+        return  # no relocation possible
+
+    # Choose new location
+    new_r, new_c = random.choice(empties)
+
+    # Move opponent
+    board[new_r][new_c] = opponent
+    buttons[new_r][new_c].config(
+        text=opponent,
+        fg="#f54242" if opponent == "X" else "#4bf542",
+        state="disabled"
+    )
+
+    # Free old spot
+    board[r][c] = " "
+    buttons[r][c].config(text=" ")
+
 
 
 def make_move(r, c):
     global player, bank_X, bank_O, score_X, score_O, shuffled_this_turn, using_bank
 
-    # Prevent placing on occupied cells
     if board[r][c] != " ":
         messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
         return
-
-    # Ask the trivia question
-        # Ask the trivia question
     result = ask_question()
 
-    # If player cancelled to pick another spot → just return without switching turn
     if result is None:
         return
 
-    # If player answered incorrectly → lose turn
     if result is False:
         switch_turn()
         return
@@ -506,16 +509,14 @@ def make_move(r, c):
     total_O = sum(cell == "O" for row in board for cell in row)
     can_use_bank = (total_X >= 2 and total_O >= 2)
 
-    # === CASE 1: PLAYER HAS A BANKED MOVE AVAILABLE ===
     if current_bank == 1 and can_use_bank and not using_bank:
         action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?")
         if action == "yes":
-            using_bank = True  # mark that bank is in use
+            using_bank = True  
             if not shuffled_this_turn:
                 shuffle_both_players()
                 shuffled_this_turn = True
 
-            # First marker of double move
             relocate_if_conflict(r, c, player)
             board[r][c] = player
             buttons[r][c].config(
@@ -560,9 +561,6 @@ def make_move(r, c):
                     buttons[i][j].config(command=lambda rr=i, cc=j: second_click(rr, cc))
             return
 
-    # === CASE 2: NORMAL MOVE (NO BANK ACTIVE) ===
-        # === CASE 2: NORMAL MOVE (NO BANK ACTIVE) ===
-    # Only ask to bank if the player doesn't already have one stored
     if (player == "X" and bank_X == 0) or (player == "O" and bank_O == 0):
         choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later?")
         if choice == "yes":
@@ -587,9 +585,6 @@ def make_move(r, c):
         declare_winner(player)
         return
     switch_turn()
-
-
-
 
 
 def switch_turn():
