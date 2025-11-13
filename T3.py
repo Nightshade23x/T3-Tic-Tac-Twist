@@ -584,6 +584,10 @@ def make_move(r, c):
     if check_winner(player):
         declare_winner(player)
         return
+    if is_draw():
+        messagebox.showinfo("Draw", "It's a draw! No more spaces left.")
+        reset_board()
+        return
     switch_turn()
 
 
