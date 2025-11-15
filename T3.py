@@ -262,9 +262,9 @@ def update_banks():
 
 def update_turn_label():
     if player == "X":
-        label.config(text=f"Player X, it's your turn,time to shine my guy", bg="#330000")
+        label.config(text=f"Player X, it's your turn,time to shine my guy,pls dont embarrass me", bg="#330000")
     else:
-        label.config(text=f"Player O, it's your turn,time to shine my guy", bg="#001a33")
+        label.config(text=f"Player O, it's your turn,time to shine my guy,pls dont embarrass me", bg="#001a33")
 
 def update_score():
     score_label.config(text=f"Score — X: {score_X} | O: {score_O}")
@@ -349,6 +349,21 @@ def ask_question():
     question_window.title(f"Question for Player {player}")
     question_window.geometry("700x400")
     question_window.config(bg="#222222")
+    def on_close():
+    # dialog shown when user presses X
+        choice = messagebox.askyesno(
+            "Exit Detected",
+            "Do you want to quit the game or pick another spot? (Yes = Quit, No = Pick another spot)"
+        )
+        if choice:
+            root.destroy()     # quit entire game
+        else:
+            question_window.destroy()
+            nonlocal timed_out
+            timed_out="retry"  # treat as wrong answer
+
+    question_window.protocol("WM_DELETE_WINDOW", on_close)
+
 
     label_q = tk.Label(question_window, text=q, wraplength=350,
                        fg="white", bg="#222222", font=("Arial", 12))
@@ -375,7 +390,7 @@ def ask_question():
         if time_left <= 0:
             timed_out = True   # <--- IMPORTANT
             timer_label.config(text="Time left: 0")
-            messagebox.showinfo("Time's Up!", "You ran out of time! Wrong answer.")
+            messagebox.showinfo("Time's Up!", "You ran out of time! Wrong answer.Brain is cooked")
             question_window.destroy()
             return
 
@@ -392,6 +407,9 @@ def ask_question():
               font=("Arial", 11)).pack(pady=10)
 
     root.wait_window(question_window)
+    if timed_out == "retry":
+        return None   # means: retry same turn, DO NOT switch players
+
 
     # ---- Handle Timeout ----
     if timed_out:
@@ -416,7 +434,7 @@ def ask_question():
         return True
     else:
         messagebox.showinfo("Wrong",
-                            f"Incorrect. The correct answer was: {correct_display}")
+                            f"Incorrect.Maybe read a book or watch the news rather than spending time on Reels. The correct answer was: {correct_display}")
         return False
 
 
@@ -487,7 +505,7 @@ def shuffle_both_players():
                     state="disabled"
                 )
 
-    messagebox.showinfo("CHAOS TIME", "Markers shuffled! Prepare for chaos 🔀")
+    messagebox.showinfo("CHAOS TIME", "Markers shuffled! Prepare for chaosss")
 
 
 def relocate_if_conflict(r, c, player):
@@ -543,7 +561,7 @@ def make_move(r, c):
     can_use_bank = (total_X >= 2 and total_O >= 2)
 
     if current_bank == 1 and can_use_bank and not using_bank:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?")
+        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?(Please do!)")
         if action == "yes":
             using_bank = True  
             if not shuffled_this_turn:
@@ -603,7 +621,7 @@ def make_move(r, c):
             else:
                 bank_O = 1
             update_banks()
-            messagebox.showinfo("Banked", f"Player {player} banked their move for later.")
+            messagebox.showinfo("Banked", f"Player {player} banked their move for later.Smart guy/gal")
             shuffled_this_turn = False
             switch_turn()
             return
@@ -618,7 +636,7 @@ def make_move(r, c):
         declare_winner(player)
         return
     if is_draw():
-        messagebox.showinfo("Draw", "It's a draw! No more spaces left.")
+        messagebox.showinfo("Fuck,its a Draw", "Now I gotta rerun this code again")
 
     # Give 1 point to both players
         global score_X, score_O
@@ -626,7 +644,7 @@ def make_move(r, c):
         score_O += 1
         update_score()
 
-        again = messagebox.askyesno("Draw", "It's a draw! Play again?")
+        again = messagebox.askyesno("Draw", "Noooo it's a draw! Play again?")
         if again:
             reset_board()
         else:
@@ -644,6 +662,41 @@ def restore_main_commands():
     for i in range(3):
         for j in range(3):
             buttons[i][j].config(command=lambda r=i, c=j: make_move(r, c))
+def big_yes_no(title, message):
+    win = tk.Toplevel(root)
+    win.title(title)
+    win.geometry("420x180")  # <<< make this bigger if you want
+    win.configure(bg="#222222")
+    win.grab_set()  # block other windows until answered
+
+    # Message text
+    tk.Label(
+        win,
+        text=message,
+        font=("Arial", 14),
+        fg="white",
+        bg="#222222",
+        wraplength=380
+    ).pack(pady=20)
+
+    # Buttons frame
+    btn_frame = tk.Frame(win, bg="#222222")
+    btn_frame.pack()
+
+    result = {"answer": None}
+
+    def choose(val):
+        result["answer"] = val
+        win.destroy()
+
+    yes_btn = tk.Button(btn_frame, text="Yes", width=10, command=lambda: choose(True))
+    no_btn = tk.Button(btn_frame, text="No", width=10, command=lambda: choose(False))
+    yes_btn.grid(row=0, column=0, padx=10)
+    no_btn.grid(row=0, column=1, padx=10)
+
+    win.wait_window()
+    return result["answer"]
+
 
 def declare_winner(p):
     global score_X, score_O
@@ -657,7 +710,8 @@ def declare_winner(p):
     bank_O=0
     update_score()
     update_banks()
-    again = messagebox.askyesno("Winner winner chicken dinner", f"Player {p} wins!\nPlay again?")
+    again = big_yes_no("Winner winner chicken dinner", f"Heartbreaking,the worst player wins...Player {p} wins unfortunately!\nPlay again?")
+
     if again:
         reset_board()
     else:
