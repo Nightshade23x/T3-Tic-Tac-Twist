@@ -121,6 +121,8 @@ markers_placed_X = 0
 markers_placed_O = 0
 shuffled_this_turn=False
 using_bank=False
+player_name = {"X": "Player X", "O": "Player O"}
+
 
 root = tk.Tk()
 root.overrideredirect(True)
@@ -178,6 +180,7 @@ def show_instructions():
     inst.geometry("800x600")
     inst.grab_set()  
     inst.focus_force()
+
     frame = tk.Frame(inst, bg="#111111")
     frame.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -197,21 +200,66 @@ def show_instructions():
 
     btn_frame = tk.Frame(inst, bg="#111111")
     btn_frame.pack(pady=15)
+
+    def start_game():
+        inst.destroy()
+        set_player_names()
+        start_game_ui()
+
     ok_btn = tk.Button(
         btn_frame,
         text="OK, LET'S PLAY",
-        command=lambda: [inst.destroy(), start_game_ui()],
         font=("Arial", 14, "bold"),
         bg="#00cc66",
         fg="black",
         width=15,
         height=1,
+        command=start_game
     )
-    ok_btn.pack()
+    ok_btn.pack()    # <<<< THIS FIXES THE ISSUE
 
     inst.lift()
     inst.attributes('-topmost', True)
     inst.after_idle(inst.attributes, '-topmost', False)
+
+
+def set_player_names():
+    global player_name
+    player_name = ask_player_names()   # Calls the new name picker
+
+
+def ask_player_names():
+    name_window = tk.Toplevel(root)
+    name_window.title("Enter Player Names")
+    name_window.geometry("400x250")
+    name_window.configure(bg="#222222")
+    name_window.grab_set()
+
+    tk.Label(name_window, text="Player X Name:",
+             fg="white", bg="#222222", font=("Arial", 12)).pack(pady=10)
+    name_x_var = tk.StringVar()
+    tk.Entry(name_window, textvariable=name_x_var,
+             font=("Arial", 12), width=25).pack()
+
+    tk.Label(name_window, text="Player O Name:",
+             fg="white", bg="#222222", font=("Arial", 12)).pack(pady=10)
+    name_o_var = tk.StringVar()
+    tk.Entry(name_window, textvariable=name_o_var,
+             font=("Arial", 12), width=25).pack()
+
+    result = {"X": "Player X", "O": "Player O"}
+
+    def submit_names():
+        result["X"] = name_x_var.get().strip() or "Player X"
+        result["O"] = name_o_var.get().strip() or "Player O"
+        name_window.destroy()
+
+    tk.Button(name_window, text="Start",
+              command=submit_names, width=12).pack(pady=20)
+
+    root.wait_window(name_window)
+    return result
+
 
 
 def start_game_ui():
@@ -261,10 +309,11 @@ def update_banks():
     bank_o_label.config(text=f"Player O Banked: {'✅' if bank_O else '❌'}")
 
 def update_turn_label():
-    if player == "X":
-        label.config(text=f"Player X, it's your turn,time to shine my guy,pls dont embarrass me", bg="#330000")
-    else:
-        label.config(text=f"Player O, it's your turn,time to shine my guy,pls dont embarrass me", bg="#001a33")
+    label.config(
+        text=f"{player_name[player]} ({player}) — it's your turn!",
+        bg="#330000" if player == "X" else "#001a33"
+    )
+
 
 def update_score():
     score_label.config(text=f"Score — X: {score_X} | O: {score_O}")
@@ -700,34 +749,72 @@ def big_yes_no(title, message):
 
 def declare_winner(p):
     global score_X, score_O
+
+    # Give points
     if p == "X":
         score_X += 1
     else:
         score_O += 1
+
     highlight_winning_line(p)
     root.update()
-    bank_X=0
-    bank_O=0
-    update_score()
-    update_banks()
-    again = big_yes_no("Winner winner chicken dinner", f"Heartbreaking,the worst player wins...Player {p} wins unfortunately!\nPlay again?")
 
-    if again:
-        reset_board()
-    else:
-        root.destroy()
-
-def reset_board():
-    global board, player, bank_X, bank_O
-    board = [[" " for _ in range(3)] for _ in range(3)]
-    for i in range(3):
-        for j in range(3):
-            buttons[i][j].config(text=" ", state="normal")
+    # Reset banks each round
     bank_X = 0
     bank_O = 0
+    update_score()
     update_banks()
-    player = random.choice(["X", "O"])
+
+    # Winner chooses whether to play again
+    again = big_yes_no(
+        "Winner winner chicken dinner",
+        f"{player_name[p]} ({p}) wins!\n\nPlay again?"
+    )
+
+    if not again:
+        root.destroy()
+        return
+
+    # Winner chooses who starts next round
+    starter = big_yes_no(
+        "Who starts?",
+        f"{player_name[p]} ({p}) won.\n\nShould {player_name[p]} start the next round?"
+    )
+
+    if starter:
+        next_player = p
+    else:
+        next_player = "O" if p == "X" else "X"
+
+    reset_board(next_player)
+
+
+def reset_board(starting_player):
+    global board, player, bank_X, bank_O, shuffled_this_turn, using_bank
+
+    # Reset game state
+    board = [[" " for _ in range(3)] for _ in range(3)]
+    bank_X = 0
+    bank_O = 0
+    shuffled_this_turn = False
+    using_bank = False
+
+    # Update internal player turn
+    player = starting_player
+
+    # Reset UI buttons
+    for i in range(3):
+        for j in range(3):
+            buttons[i][j].config(
+                text=" ",
+                fg="white",
+                state="normal",
+                command=lambda r=i, c=j: make_move(r, c)
+            )
+
+    update_banks()
     update_turn_label()
+
 
 show_instructions()
 root.wait_window()
