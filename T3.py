@@ -231,22 +231,99 @@ def coin_toss_animation():
     toss_window.geometry("400x200")
     toss_window.configure(bg="#111111")
 
-    toss_label = tk.Label(toss_window, text="Flipping...", font=("Arial", 20, "bold"),
-                          fg="white", bg="#111111")
+    toss_label = tk.Label(
+        toss_window,
+        text="Flipping...",
+        font=("Arial", 20, "bold"),
+        fg="white",
+        bg="#111111"
+    )
     toss_label.pack(expand=True)
 
     results = ["Heads", "Tails"]
 
     def animate(count=0):
-        if count < 15:  
+        if count < 15:
             toss_label.config(text=random.choice(results))
             toss_window.after(80, animate, count + 1)
         else:
-            toss_label.config(text=f"{player_name[player]} ({player}) starts!", fg="#00ff66")
+            # UPDATED LINE ↓↓↓
+            toss_label.config(
+                text=f"{player_name[player]} ({player}) starts!",
+                fg="#00ff66"
+            )
             toss_window.after(1200, toss_window.destroy)
 
     animate()
     root.wait_window(toss_window)
+
+def start_menu():
+    menu = tk.Toplevel(root)
+    menu.title("T3: Tic Tac Twist — Main Menu")
+    menu.geometry("500x350")
+    menu.configure(bg="#111111")
+    menu.grab_set()
+    menu.focus_force()
+
+    title = tk.Label(
+        menu,
+        text="T3: TIC TAC TWIST",
+        font=("Arial", 24, "bold"),
+        fg="#00ff99",
+        bg="#111111"
+    )
+    title.pack(pady=30)
+
+    # --- Start Game should go STRAIGHT into name entry + game ---
+    def start_game():
+        menu.destroy()
+        set_player_names()
+        start_game_ui()
+
+    # --- Instructions should show your BIG 'READ THIS SHIT' window ---
+    def show_rules():
+        menu.destroy()
+        show_instructions()
+
+    btn_start = tk.Button(
+        menu,
+        text="Start Game",
+        font=("Arial", 16, "bold"),
+        width=15,
+        bg="#00cc66",
+        fg="black",
+        command=start_game
+    )
+    btn_start.pack(pady=20)
+
+    btn_instructions = tk.Button(
+        menu,
+        text="Instructions",
+        font=("Arial", 14),
+        width=15,
+        bg="#444444",
+        fg="white",
+        command=show_rules
+    )
+    btn_instructions.pack(pady=10)
+
+    btn_quit = tk.Button(
+        menu,
+        text="Quit",
+        font=("Arial", 14),
+        width=15,
+        bg="#cc3333",
+        fg="white",
+        command=lambda: root.destroy()
+    )
+    btn_quit.pack(pady=10)
+
+    menu.lift()
+    menu.attributes('-topmost', True)
+    menu.after_idle(menu.attributes, '-topmost', False)
+
+    root.wait_window(menu)
+
 
 def show_instructions():
 
@@ -282,6 +359,7 @@ def show_instructions():
         inst.destroy()
         set_player_names()
         start_game_ui()
+        
 
     ok_btn = tk.Button(
         btn_frame,
@@ -665,37 +743,52 @@ def relocate_if_conflict(r, c, player):
 
 
 def make_move(r, c):
-    global player, bank_X, bank_O, score_X, score_O, shuffled_this_turn, using_bank
+    global player, bank_X, bank_O, score_X, score_O
+    global shuffled_this_turn, using_bank
 
+    # Prevent placing on taken tile
     if board[r][c] != " ":
         messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
         return
 
-    # Ask question first
+    # Step 1 — Answer Question FIRST
     result = ask_question()
 
     if result is None:
-        return  # retry same turn
+        return   # retry same turn (X-pressed logic)
 
     if result is False:
         switch_turn()
         return
 
-    # --- If they answer correctly, check if they want to use bank (double move) ---
+    # ===================================================
+    # STEP 2 — BANK USAGE (DOUBLE MOVE if they already have bank)
+    # ===================================================
+
     current_bank = bank_X if player == "X" else bank_O
     opponent = "O" if player == "X" else "X"
+
     total_X = sum(cell == "X" for row in board for cell in row)
     total_O = sum(cell == "O" for row in board for cell in row)
+
     can_use_bank = (total_X >= 2 and total_O >= 2)
 
+    # If the player already has a stored bank AND is allowed to use it
     if current_bank == 1 and can_use_bank and not using_bank:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?")
+        action = messagebox.askquestion(
+            "Your Move",
+            "You have a banked move.\nUse it now?"
+        )
+
         if action == "yes":
             using_bank = True
+
+            # Chaos only once per turn
             if not shuffled_this_turn:
                 shuffle_both_players()
                 shuffled_this_turn = True
 
+            # First of the double moves
             relocate_if_conflict(r, c, player)
             board[r][c] = player
             buttons[r][c].config(
@@ -704,6 +797,7 @@ def make_move(r, c):
                 state="disabled"
             )
 
+            # Consume the bank
             if player == "X":
                 bank_X = 0
             else:
@@ -712,8 +806,10 @@ def make_move(r, c):
 
             messagebox.showinfo("Second Move", f"Player {player}, place your second marker")
 
+            # Allow only second click
             def second_click(rr, cc):
                 global shuffled_this_turn, using_bank
+
                 if board[rr][cc] in [" ", opponent]:
                     relocate_if_conflict(rr, cc, player)
                     board[rr][cc] = player
@@ -722,37 +818,71 @@ def make_move(r, c):
                         fg="#f5f542" if player == "X" else "#42f5c5",
                         state="disabled"
                     )
+
                     restore_main_commands()
+
+                    # Win check
                     if check_winner(player):
                         declare_winner(player)
                     else:
                         switch_turn()
+
                     shuffled_this_turn = False
                     using_bank = False
                 else:
                     messagebox.showinfo("Invalid", "Spot is taken. Use your eyes please.")
 
-            # temporarily override all buttons
+            # Override all buttons for second marker
             for i in range(3):
                 for j in range(3):
                     buttons[i][j].config(command=lambda rr=i, cc=j: second_click(rr, cc))
+
             return
 
-    # --- NORMAL SINGLE MOVE ---
+    # ===================================================
+    # STEP 3 — NEW BANKING LOGIC (Offer BEFORE placing marker)
+    # ===================================================
+
+    # Only offer bank if player has no banked move yet
+    if (player == "X" and bank_X == 0) or (player == "O" and bank_O == 0):
+
+        choice = messagebox.askquestion(
+            "Your Move",
+            "Do you want to bank this move for later?"
+        )
+
+        if choice == "yes":
+            # store bank
+            if player == "X":
+                bank_X = 1
+            else:
+                bank_O = 1
+            update_banks()
+
+            messagebox.showinfo("Banked", f"Player {player} banked their move.")
+
+            switch_turn()
+            return   # DO NOT place marker
+
+    # ===================================================
+    # STEP 4 — Normal Single Placement (only if not banked)
+    # ===================================================
+
     relocate_if_conflict(r, c, player)
     board[r][c] = player
+
     buttons[r][c].config(
         text=player,
         fg="#ffff99" if player == "X" else "#99ffff",
         state="disabled"
     )
 
-    # --- CHECK WIN BEFORE BANK OPTION (FIXED) ---
+    # Win?
     if check_winner(player):
         declare_winner(player)
         return
 
-    # --- CHECK FOR DRAW ---
+    # Draw?
     if is_draw():
         messagebox.showinfo("Fuck,its a Draw", "Now I gotta rerun this code again")
         score_X += 1
@@ -766,21 +896,9 @@ def make_move(r, c):
             root.destroy()
         return
 
-    # --- ONLY OFFER BANKING IF THE MOVE WAS NOT WINNING ---
-    if (player == "X" and bank_X == 0) or (player == "O" and bank_O == 0):
-        choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later?")
-        if choice == "yes":
-            if player == "X":
-                bank_X = 1
-            else:
-                bank_O = 1
-            update_banks()
-            messagebox.showinfo("Banked", f"Player {player} banked their move.")
-            switch_turn()
-            return
-
-    # --- NORMAL TURN SWITCH ---
+    # Otherwise normal turn switch
     switch_turn()
+
 
 
 
@@ -898,6 +1016,6 @@ def reset_board(starting_player):
     update_turn_label()
 
 
-show_instructions()
+start_menu()
 root.wait_window()
 root.mainloop()
