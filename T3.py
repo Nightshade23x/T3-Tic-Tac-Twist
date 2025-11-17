@@ -768,10 +768,8 @@ def make_move(r, c):
     current_bank = bank_X if player == "X" else bank_O
     opponent = "O" if player == "X" else "X"
 
-    total_X = sum(cell == "X" for row in board for cell in row)
-    total_O = sum(cell == "O" for row in board for cell in row)
-
-    can_use_bank = (total_X >= 2 and total_O >= 2)
+    
+    can_use_bank = True
 
     # If the player already has a stored bank AND is allowed to use it
     if current_bank == 1 and can_use_bank and not using_bank:
@@ -1016,6 +1014,8 @@ def reset_board(starting_player):
     update_turn_label()
 
 
-start_menu()
-root.wait_window()
-root.mainloop()
+if __name__ == "__main__":
+    start_menu()
+    root.wait_window()
+    root.mainloop()
+
