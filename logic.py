@@ -7,7 +7,7 @@ from state import (
 )
 from questions import get_question
 from chaos import shuffle_both_players
-from ui import update_banks, update_turn_label, update_score, big_yes_no
+
 from state import root
 
 
@@ -15,19 +15,26 @@ from state import root
 #      WIN CHECKING
 # -----------------------------------
 
+
 def check_winner(p):
     for i in range(3):
+        # row
         if all(board[i][j] == p for j in range(3)):
             return True
+        # column
         if all(board[j][i] == p for j in range(3)):
             return True
 
+    # diagonal
     if all(board[i][i] == p for i in range(3)):
         return True
+
+    # anti-diagonal
     if all(board[i][2 - i] == p for i in range(3)):
         return True
 
     return False
+
 
 
 def is_draw():
@@ -66,6 +73,8 @@ def relocate_if_conflict(r, c, player):
 # -----------------------------------
 
 def make_move(r, c):
+    from ui import update_banks, update_turn_label
+
     global player, bank_X, bank_O, shuffled_this_turn, using_bank
     global score_X, score_O
 
@@ -218,6 +227,8 @@ def restore_main_commands():
 # -----------------------------------
 
 def declare_winner(p):
+    from ui import update_score, update_banks, update_turn_label, big_yes_no
+
     global score_X, score_O, bank_X, bank_O
 
     if p == "X":
@@ -255,6 +266,8 @@ def declare_winner(p):
 # -----------------------------------
 
 def reset_board(starting_player):
+    from ui import update_banks, update_turn_label
+
     global board, player, bank_X, bank_O, shuffled_this_turn, using_bank
 
     board[:] = [[" " for _ in range(3)] for _ in range(3)]

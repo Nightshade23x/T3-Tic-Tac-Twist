@@ -2,7 +2,7 @@ import random
 from tkinter import messagebox
 
 from state import board, buttons
-from chaos import check_winner  # safe circular import because function-only
+  # safe circular import because function-only
    
 
 def almost_winning(p):
@@ -28,6 +28,7 @@ def almost_winning(p):
 def shuffle_both_players():
     """Randomly relocates all X and O markers while avoiding auto-wins."""
     from state import shuffled_this_turn
+    from logic import check_winner
     global shuffled_this_turn
 
     if shuffled_this_turn:
