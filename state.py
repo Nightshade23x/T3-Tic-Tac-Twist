@@ -46,7 +46,8 @@ def init_state():
 
     player_name = {"X": "Player X", "O": "Player O"}
 
-    buttons = []
+    buttons = [[None for _ in range(3)] for _ in range(3)]
+
 
     # UI labels get created in ui.py
     bank_x_label = None

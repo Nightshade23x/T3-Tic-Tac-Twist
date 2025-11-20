@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import random
 
-# IMPORTANT: Never import player_name or turn_label at top (keeps stale values)
-from state import root, board, player, bank_X, bank_O, score_X, score_O, shuffled_this_turn, using_bank, buttons
-from logic import make_move, reset_board
+# SAFE: import state as module (never copy variables!)
+import state
+from game_logic import make_move, reset_board
 from questions import instructions
 
 
@@ -12,6 +12,7 @@ from questions import instructions
 # ROOT SETUP
 # ---------------------------------------
 
+root = state.root
 root.overrideredirect(True)
 root.withdraw()
 root.title("T3: Tic Tac Twist")
@@ -31,8 +32,6 @@ root.geometry(f"{app_width}x{app_height}+{x_pos}+{y_pos}")
 # ---------------------------------------
 
 def coin_toss_animation():
-    from state import player, player_name   # <-- pull fresh names
-
     toss_window = tk.Toplevel(root)
     toss_window.title("Coin Toss")
     toss_window.geometry("400x200")
@@ -50,15 +49,12 @@ def coin_toss_animation():
     results = ["Heads", "Tails"]
 
     def animate(count=0):
-        from state import player, player_name  # fresh inside loop
-
         if count < 15:
             toss_label.config(text=random.choice(results))
             toss_window.after(80, animate, count + 1)
         else:
-            # FIX: player_name now always valid
             toss_label.config(
-                text=f"{player_name[player]} ({player}) starts!",
+                text=f"{state.player_name[state.player]} ({state.player}) starts!",
                 fg="#00ff66"
             )
             toss_window.after(1200, toss_window.destroy)
@@ -87,7 +83,7 @@ def start_menu_ui():
 
     def start_game():
         menu.destroy()
-        set_player_names()   # MUST HAPPEN BEFORE COIN TOSS
+        set_player_names()
         start_game_ui()
 
     def show_rules():
@@ -176,9 +172,7 @@ def ask_player_names():
 
 
 def set_player_names():
-    from state import player_name
-    # FIX: update the existing dict instead of replacing it
-    player_name.update(ask_player_names())
+    state.player_name.update(ask_player_names())
 
 
 # ---------------------------------------
@@ -186,18 +180,15 @@ def set_player_names():
 # ---------------------------------------
 
 def start_game_ui():
-    import state
-    from state import player
-
     coin_toss_animation()
 
     root.deiconify()
     root.overrideredirect(False)
 
-    # TURN LABEL — correctly assigned to global state
+    # TURN LABEL
     state.turn_label = tk.Label(
         root,
-        text=f"{state.player_name[player]} ({player}) — it's your turn!",
+        text=f"{state.player_name[state.player]} ({state.player}) — it's your turn!",
         font=("Arial", 16, "bold"),
         fg="white",
         bg="#222222",
@@ -205,7 +196,7 @@ def start_game_ui():
     )
     state.turn_label.pack(fill="x")
 
-    # SCORE LABEL — correct global storage
+    # SCORE LABEL
     state.score_label = tk.Label(
         root,
         text="Score — X: 0 | O: 0",
@@ -215,7 +206,7 @@ def start_game_ui():
     )
     state.score_label.pack()
 
-    # BANK LABELS — correct
+    # BANK LABELS
     status_frame = tk.Frame(root, bg="#121212")
     status_frame.pack(pady=5)
 
@@ -237,9 +228,12 @@ def start_game_ui():
     frame = tk.Frame(root, bg="#121212")
     frame.pack(pady=10)
 
-    buttons.clear()
+    # Reset buttons matrix IN PLACE
     for i in range(3):
-        row = []
+        for j in range(3):
+            state.buttons[i][j] = None
+
+    for i in range(3):
         for j in range(3):
             b = tk.Button(
                 frame,
@@ -252,12 +246,10 @@ def start_game_ui():
                 command=lambda r=i, c=j: make_move(r, c)
             )
             b.grid(row=i, column=j, padx=5, pady=5)
-            row.append(b)
-        buttons.append(row)
+            state.buttons[i][j] = b
 
     update_banks()
     update_turn_label()
-
 
 
 # ---------------------------------------
@@ -265,24 +257,74 @@ def start_game_ui():
 # ---------------------------------------
 
 def update_banks():
-    from state import bank_X, bank_O, bank_x_label, bank_o_label
-    bank_x_label.config(text=f"Player X Banked: {'✅' if bank_X else '❌'}")
-    bank_o_label.config(text=f"Player O Banked: {'✅' if bank_O else '❌'}")
+    state.bank_x_label.config(text=f"Player X Banked: {'✅' if state.bank_X else '❌'}")
+    state.bank_o_label.config(text=f"Player O Banked: {'✅' if state.bank_O else '❌'}")
 
 
 def update_turn_label():
-    from state import player, player_name, turn_label
-    turn_label.config(
-        text=f"{player_name[player]} ({player}) — it's your turn!",
-        bg="#330000" if player == "X" else "#001a33",
+    state.turn_label.config(
+        text=f"{state.player_name[state.player]} ({state.player}) — it's your turn!",
+        bg="#330000" if state.player == "X" else "#001a33",
         fg="white"
     )
 
 
 def update_score():
-    from state import score_X, score_O, score_label
-    score_label.config(text=f"Score — X: {score_X} | O: {score_O}")
+    state.score_label.config(text=f"Score — X: {state.score_X} | O: {state.score_O}")
 
+
+def highlight_winning_line(p):
+    from state import buttons, board, root
+    import tkinter as tk
+
+    # Create overlay canvas above the board
+    frame = buttons[0][0].master  # the frame holding the buttons
+    canvas = tk.Canvas(frame, width=frame.winfo_width(), height=frame.winfo_height(),
+                       highlightthickness=0, bg="#121212", bd=0)
+    canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+    frame.update_idletasks()
+
+    cell_size = buttons[0][0].winfo_width() + 10
+    gap = 5
+
+    winning_coords = None
+
+    # Row win
+    for i in range(3):
+        if all(board[i][j] == p for j in range(3)):
+            y = i * (cell_size + gap) + cell_size // 2
+            winning_coords = (0, y, 3 * cell_size, y)
+            break
+
+    # Column win
+    for j in range(3):
+        if all(board[i][j] == p for i in range(3)):
+            x = j * (cell_size + gap) + cell_size // 2
+            winning_coords = (x, 0, x, 3 * cell_size)
+            break
+
+    # Diagonals
+    if all(board[i][i] == p for i in range(3)):
+        winning_coords = (0, 0, 3 * cell_size, 3 * cell_size)
+    elif all(board[i][2-i] == p for i in range(3)):
+        winning_coords = (3 * cell_size, 0, 0, 3 * cell_size)
+
+    if winning_coords:
+        x1, y1, x2, y2 = winning_coords
+        color = "#f54242" if p == "X" else "#4bf542"
+
+        steps = 25
+        for step in range(steps + 1):
+            canvas.delete("line")
+            x_end = x1 + (x2 - x1) * (step / steps)
+            y_end = y1 + (y2 - y1) * (step / steps)
+            canvas.create_line(x1, y1, x_end, y_end,
+                               width=8, fill=color, tags="line")
+            canvas.update()
+            canvas.after(20)
+
+        root.after(1200, canvas.destroy)
 
 # ---------------------------------------
 # BIG YES/NO
