@@ -1,13 +1,14 @@
 import random
 from tkinter import messagebox
 
-from state import board, buttons
-import state               # <<< FIX HERE
+import state
 import game_logic
 
 
 def almost_winning(p):
     """Checks if a player is one move away from winning (for chaos mode)."""
+    board = state.board
+
     for i in range(3):
         row = [board[i][j] for j in range(3)]
         col = [board[j][i] for j in range(3)]
@@ -27,33 +28,40 @@ def almost_winning(p):
 
 
 def shuffle_both_players():
-    """Randomly relocates all X and O markers while avoiding auto-wins."""
+    """Randomly relocates all markers while avoiding auto-wins."""
 
-    # <<< FIX: USE state.shuffled_this_turn instead of imported variable
+    # Do not reshuffle twice in one turn
     if state.shuffled_this_turn:
         return
     state.shuffled_this_turn = True
 
-    players = ["X", "O"]
+    board = state.board
+    buttons = state.buttons
 
+    # -------------------------
+    # SAFETY CHECK (avoids crash)
+    # -------------------------
+    if board is None:
+        print("WARNING: shuffle_both_players() called before init_state()")
+        state.init_state()
+        board = state.board
+
+    # make a deep copy of board
     old_board = [row[:] for row in board]
 
+    players = ["X", "O"]
     reshuffle_limit = 50
-    attempt = 0
 
-    while attempt < reshuffle_limit:
-        attempt += 1
+    for _ in range(reshuffle_limit):
 
-        # clear board
+        # wipe board
         for i in range(3):
             for j in range(3):
                 board[i][j] = " "
 
         for p in players:
-            markers = [(i, j) for i in range(3) for j in range(3)
-                       if old_board[i][j] == p]
-            empties = [(i, j) for i in range(3) for j in range(3)
-                       if board[i][j] == " "]
+            markers = [(i, j) for i in range(3) for j in range(3) if old_board[i][j] == p]
+            empties = [(i, j) for i in range(3) for j in range(3) if board[i][j] == " "]
 
             random.shuffle(markers)
             random.shuffle(empties)
@@ -61,6 +69,7 @@ def shuffle_both_players():
             for (mr, mc), (er, ec) in zip(markers, empties):
                 board[er][ec] = p
 
+        # no instant win + no almost-wins allowed
         if (
             not game_logic.check_winner("X")
             and not game_logic.check_winner("O")
@@ -68,7 +77,6 @@ def shuffle_both_players():
             and not almost_winning("O")
         ):
             break
-
 
     # repaint UI
     for i in range(3):

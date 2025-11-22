@@ -90,7 +90,7 @@ def make_move(r, c):
     # USE BANKED MOVE?
     # -------------------------
     if current_bank == 1 and not state.using_bank:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?")
+        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?(PLEASE DOOO)")
 
         if action == "yes":
             state.using_bank = True
@@ -114,7 +114,7 @@ def make_move(r, c):
 
             update_banks()
 
-            messagebox.showinfo("Second Move", f"Player {state.player}, place your second marker")
+            messagebox.showinfo("Second Move", f"Player {state.player}, place ur next marker pls,pretty pls")
 
             # handle second click
             def second_click(rr, cc):
@@ -137,7 +137,7 @@ def make_move(r, c):
                     state.shuffled_this_turn = False
                     state.using_bank = False
                 else:
-                    messagebox.showinfo("Invalid", "Spot is taken. Use your eyes please.")
+                    messagebox.showinfo("Iwe", "Spot is taken.Are you blind?")
 
             # override all buttons
             for i in range(3):
@@ -152,7 +152,7 @@ def make_move(r, c):
     if (state.player == "X" and state.bank_X == 0) or (
             state.player == "O" and state.bank_O == 0):
 
-        choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later?")
+        choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later(PLEASE DO!)?")
 
         if choice == "yes":
             if state.player == "X":
@@ -161,7 +161,7 @@ def make_move(r, c):
                 state.bank_O = 1
 
             update_banks()
-            messagebox.showinfo("Banked", f"Player {state.player} banked their move.")
+            messagebox.showinfo("Banked", f"Player {state.player} banked their move.(SMART GUY/GAL)")
             switch_turn()
             return
 
@@ -182,7 +182,7 @@ def make_move(r, c):
         return
 
     if is_draw():
-        messagebox.showinfo("Draw", "It's a draw!")
+        messagebox.showinfo("Draw", "FUCKKK,It's a draw!Now i gotta rerun this code ffs")
         state.score_X += 1
         state.score_O += 1
         update_score()
@@ -235,8 +235,8 @@ def declare_winner(p):
     update_banks()
 
     again = big_yes_no(
-        "Winner winner chicken dinner",
-        f"{state.player_name[p]} ({p}) wins!\n\nPlay again?"
+        "GAME OVER!",
+        f"WINNER WINNER CHICKEN DINNER!!! {state.player_name[p]} ({p}) wins!\n\nPlay again?"
     )
 
     if not again:
@@ -245,7 +245,7 @@ def declare_winner(p):
 
     starter = big_yes_no(
         "Who starts?",
-        f"{state.player_name[p]} won.\nShould they start the next round?"
+        f"{state.player_name[p]} won.\nDo u wanna start the next round or go 2nd?"
     )
 
     next_player = p if starter else ("O" if p == "X" else "X")
@@ -301,6 +301,7 @@ def ask_question():
             "Quit the game? (Yes = Quit, No = Pick another spot)"
         )
         if choice:
+            messagebox.showinfo("I spent all this time just for cowards to jam\n C u never again!")
             root.destroy()
         else:
             question_window.destroy()
@@ -332,7 +333,7 @@ def ask_question():
         if time_left <= 0:
             timed_out = True
             timer_label.config(text="Time left: 0")
-            messagebox.showinfo("Time's Up!", "You ran out of time! Wrong answer.")
+            messagebox.showinfo("Time's Up!", "You ran out of time! Pedal to the metal next time or sth like that.")
             question_window.destroy()
             return
 
@@ -369,5 +370,5 @@ def ask_question():
         messagebox.showinfo("Correct!!!", "Marker earned!")
         return True
 
-    messagebox.showinfo("Wrong", f"Incorrect. The correct answer was: {correct_display}")
+    messagebox.showinfo("Wronggg", f"LOLLLL.MAYBE SPEND LESS TIME ON REELS AND MORE ON THE NEWS\n The correct answer was: {correct_display}")
     return False

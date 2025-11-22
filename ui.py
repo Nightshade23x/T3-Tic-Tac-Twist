@@ -84,7 +84,7 @@ def start_menu_ui():
     def start_game():
         menu.destroy()
         set_player_names()
-        start_game_ui()
+        
 
     def show_rules():
         menu.destroy()
@@ -172,7 +172,85 @@ def ask_player_names():
 
 
 def set_player_names():
-    state.player_name.update(ask_player_names())
+    win = tk.Toplevel(root)
+    win.title("Enter Player Names")
+    win.configure(bg="#111111")   # dark theme
+
+    # Larger, cleaner window size
+    win.geometry("450x350")
+    win.resizable(False, False)
+    win.grab_set()
+    win.focus_force()
+
+    # Center the window on screen
+    win.update_idletasks()
+    x = (win.winfo_screenwidth() - win.winfo_reqwidth()) // 2
+    y = (win.winfo_screenheight() - win.winfo_reqheight()) // 3
+    win.geometry(f"+{x}+{y}")
+
+    title_font = ("Arial", 16, "bold")
+    label_font = ("Arial", 14)
+    entry_font = ("Arial", 14)
+    button_font = ("Arial", 14, "bold")
+
+    # ------- Player X ---------
+    lbl_x = tk.Label(
+        win, text="Player X Name:",
+        fg="white", bg="#111111",
+        font=label_font
+    )
+    lbl_x.pack(pady=(25, 5))
+
+    entry_x = tk.Entry(
+        win,
+        font=entry_font,
+        width=20,
+        justify="center"
+    )
+    entry_x.pack(pady=(0, 20))
+
+    # ------- Player O ---------
+    lbl_o = tk.Label(
+        win, text="Player O Name:",
+        fg="white", bg="#111111",
+        font=label_font
+    )
+    lbl_o.pack(pady=(10, 5))
+
+    entry_o = tk.Entry(
+        win,
+        font=entry_font,
+        width=20,
+        justify="center"
+    )
+    entry_o.pack(pady=(0, 25))
+
+    # ------- Start Button -------
+    def start_game():
+        nx = entry_x.get().strip()
+        no = entry_o.get().strip()
+
+        if nx == "":
+            nx = "Player X"
+        if no == "":
+            no = "Player O"
+
+        state.player_name["X"] = nx
+        state.player_name["O"] = no
+
+        win.destroy()
+        start_game_ui()
+
+    btn = tk.Button(
+        win, text="Start",
+        font=button_font,
+        width=10,
+        bg="#eeeeee",
+        fg="black",
+        command=start_game
+    )
+    btn.pack(pady=10)
+
 
 
 # ---------------------------------------
