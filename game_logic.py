@@ -292,8 +292,15 @@ def ask_question():
     question_window = tk.Toplevel(root)
     question_window.title(f"Question for Player {state.player}")
     question_window.geometry("700x400")
-    question_window.config(bg="#222222")
+    question_window.config(bg="#0E1A2B")  # Midnight blue theme
 
+    # Center window
+    question_window.update_idletasks()
+    x = (question_window.winfo_screenwidth() - question_window.winfo_reqwidth()) // 2
+    y = (question_window.winfo_screenheight() - question_window.winfo_reqheight()) // 3
+    question_window.geometry(f"+{x}+{y}")
+
+    # Handle closing
     def on_close():
         nonlocal timed_out
         choice = messagebox.askyesno(
@@ -309,21 +316,63 @@ def ask_question():
 
     question_window.protocol("WM_DELETE_WINDOW", on_close)
 
-    label_q = tk.Label(question_window, text=q, wraplength=350,
-                       fg="white", bg="#222222", font=("Arial", 12))
-    label_q.pack(pady=20)
+    # ---------- FRAME (Centers everything vertically) ----------
+    frame = tk.Frame(question_window, bg="#0E1A2B")
+    frame.pack(expand=True)
 
-    timer_label = tk.Label(question_window, text="Time left: 20",
-                           fg="red", bg="#222222",
-                           font=("Arial", 14, "bold"))
-    timer_label.pack(pady=5)
+    # ---------- QUESTION ----------
+    label_q = tk.Label(
+        frame,
+        text=q,
+        wraplength=600,
+        fg="#E6EFFF",          # soft bluish white
+        bg="#0E1A2B",
+        font=("Arial", 20, "bold"),
+        justify="center"
+    )
+    label_q.pack(pady=(10, 25))
 
+    # ---------- TIMER ----------
+    timer_label = tk.Label(
+        frame,
+        text="Time left: 20",
+        fg="red",
+        bg="#0E1A2B",
+        font=("Arial", 20, "bold")
+    )
+    timer_label.pack(pady=(0, 20))
+
+    # ---------- ANSWER ENTRY ----------
     answer_var = tk.StringVar()
-    entry = tk.Entry(question_window, textvariable=answer_var,
-                     font=("Arial", 12), width=30)
-    entry.pack(pady=10)
+    entry = tk.Entry(
+        frame,
+        textvariable=answer_var,
+        font=("Arial", 16),
+        width=35,
+        justify="center",
+        fg="black",
+        bg="white"
+    )
+    entry.pack(pady=(0, 25))
     entry.focus()
 
+    # ---------- SUBMIT BUTTON ----------
+    def submit():
+        question_window.destroy()
+
+    submit_btn = tk.Button(
+        frame,
+        text="Submit",
+        command=submit,
+        font=("Arial", 16, "bold"),
+        bg="#00CC44",         # bright green
+        activebackground="#00FF66",
+        fg="black",
+        width=12
+    )
+    submit_btn.pack(pady=(0, 10))
+
+    # ---------- TIMER LOGIC ----------
     time_left = 20
 
     def countdown():
@@ -333,7 +382,7 @@ def ask_question():
         if time_left <= 0:
             timed_out = True
             timer_label.config(text="Time left: 0")
-            messagebox.showinfo("Time's Up!", "You ran out of time! Pedal to the metal next time or sth like that.")
+            messagebox.showinfo("Time's Up!", "You ran out of time! Try again next time!")
             question_window.destroy()
             return
 
@@ -342,19 +391,15 @@ def ask_question():
 
     countdown()
 
-    def submit():
-        question_window.destroy()
-
-    tk.Button(question_window, text="Submit", command=submit,
-              font=("Arial", 11)).pack(pady=10)
-
     root.wait_window(question_window)
 
+    # handle exit logic
     if timed_out == "retry":
         return None
     if timed_out:
         return False
 
+    # ---------- ANSWER CHECK ----------
     ans = answer_var.get().strip().lower()
     if ans == "":
         return False
@@ -370,5 +415,8 @@ def ask_question():
         messagebox.showinfo("Correct!!!", "Marker earned!")
         return True
 
-    messagebox.showinfo("Wronggg", f"LOLLLL.MAYBE SPEND LESS TIME ON REELS AND MORE ON THE NEWS\n The correct answer was: {correct_display}")
+    messagebox.showinfo(
+        "Wronggg",
+        f"LOLLLL. Maybe spend less time on reels and more on the news.\nCorrect answer: {correct_display}"
+    )
     return False
