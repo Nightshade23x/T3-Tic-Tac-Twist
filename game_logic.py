@@ -245,7 +245,7 @@ def declare_winner(p):
 
     starter = big_yes_no(
         "Who starts?",
-        f"{state.player_name[p]} won.\nDo u wanna start the next round or go 2nd?"
+        f"{state.player_name[p]} won.\nDo u wanna start the next round or not?"
     )
 
     next_player = p if starter else ("O" if p == "X" else "X")

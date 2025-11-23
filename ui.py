@@ -28,6 +28,15 @@ root.geometry(f"{app_width}x{app_height}+{x_pos}+{y_pos}")
 
 
 # ---------------------------------------
+# GAME START WRAPPER (Fix for double triggers)
+# ---------------------------------------
+
+def begin_game():
+    set_player_names()
+    start_game_ui()
+
+
+# ---------------------------------------
 # COIN TOSS
 # ---------------------------------------
 
@@ -83,8 +92,7 @@ def start_menu_ui():
 
     def start_game():
         menu.destroy()
-        set_player_names()
-        
+        begin_game()
 
     def show_rules():
         menu.destroy()
@@ -126,8 +134,7 @@ def show_instructions_ui():
 
     def start_game():
         inst.destroy()
-        set_player_names()
-        start_game_ui()
+        begin_game()
 
     tk.Button(inst, text="OK, LET'S PLAY", font=("Arial", 14, "bold"),
               bg="#00cc66", fg="black", width=15,
@@ -226,20 +233,14 @@ def set_player_names():
     entry_o.pack(pady=(0, 25))
 
     # ------- Start Button -------
-    def start_game():
-        nx = entry_x.get().strip()
-        no = entry_o.get().strip()
-
-        if nx == "":
-            nx = "Player X"
-        if no == "":
-            no = "Player O"
+    def submit():
+        nx = entry_x.get().strip() or "Player X"
+        no = entry_o.get().strip() or "Player O"
 
         state.player_name["X"] = nx
         state.player_name["O"] = no
 
-        win.destroy()
-        start_game_ui()
+        win.destroy()   # close the window
 
     btn = tk.Button(
         win, text="Start",
@@ -247,9 +248,12 @@ def set_player_names():
         width=10,
         bg="#eeeeee",
         fg="black",
-        command=start_game
+        command=submit
     )
     btn.pack(pady=10)
+
+    # 🔥 CRITICAL FIX: block execution until this window is closed
+    root.wait_window(win)
 
 
 
@@ -263,7 +267,6 @@ def start_game_ui():
     root.deiconify()
     root.overrideredirect(False)
 
-    # TURN LABEL
     state.turn_label = tk.Label(
         root,
         text=f"{state.player_name[state.player]} ({state.player}) — it's your turn!",
@@ -274,7 +277,6 @@ def start_game_ui():
     )
     state.turn_label.pack(fill="x")
 
-    # SCORE LABEL
     state.score_label = tk.Label(
         root,
         text="Score — X: 0 | O: 0",
@@ -284,7 +286,6 @@ def start_game_ui():
     )
     state.score_label.pack()
 
-    # BANK LABELS
     status_frame = tk.Frame(root, bg="#121212")
     status_frame.pack(pady=5)
 
@@ -302,11 +303,9 @@ def start_game_ui():
     )
     state.bank_o_label.grid(row=0, column=1, padx=10)
 
-    # GAME BOARD
     frame = tk.Frame(root, bg="#121212")
     frame.pack(pady=10)
 
-    # Reset buttons matrix IN PLACE
     for i in range(3):
         for j in range(3):
             state.buttons[i][j] = None
@@ -355,8 +354,7 @@ def highlight_winning_line(p):
     from state import buttons, board, root
     import tkinter as tk
 
-    # Create overlay canvas above the board
-    frame = buttons[0][0].master  # the frame holding the buttons
+    frame = buttons[0][0].master
     canvas = tk.Canvas(frame, width=frame.winfo_width(), height=frame.winfo_height(),
                        highlightthickness=0, bg="#121212", bd=0)
     canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
@@ -368,21 +366,18 @@ def highlight_winning_line(p):
 
     winning_coords = None
 
-    # Row win
     for i in range(3):
         if all(board[i][j] == p for j in range(3)):
             y = i * (cell_size + gap) + cell_size // 2
             winning_coords = (0, y, 3 * cell_size, y)
             break
 
-    # Column win
     for j in range(3):
         if all(board[i][j] == p for i in range(3)):
             x = j * (cell_size + gap) + cell_size // 2
             winning_coords = (x, 0, x, 3 * cell_size)
             break
 
-    # Diagonals
     if all(board[i][i] == p for i in range(3)):
         winning_coords = (0, 0, 3 * cell_size, 3 * cell_size)
     elif all(board[i][2-i] == p for i in range(3)):
@@ -403,6 +398,7 @@ def highlight_winning_line(p):
             canvas.after(20)
 
         root.after(1200, canvas.destroy)
+
 
 # ---------------------------------------
 # BIG YES/NO
