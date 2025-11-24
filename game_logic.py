@@ -233,7 +233,6 @@ def restore_main_commands():
 
 def declare_winner(p):
     from ui import update_score, update_banks, update_turn_label, big_yes_no, highlight_winning_line
-    highlight_winning_line(p)
 
     if p == "X":
         state.score_X += 1
@@ -249,9 +248,10 @@ def declare_winner(p):
     update_banks()
 
     again = big_yes_no(
-        "GAME OVER!",
-        f"WINNER WINNER CHICKEN DINNER!!! {state.player_name[p]} ({p}) wins!\n\nPlay again?"
+    "GAME OVER!",
+    f"WINNER WINNER CHICKEN DINNER!!!\n{state.player_name[p]} ({p}) wins!\nPlay again?"
     )
+
 
     if not again:
         root.destroy()

@@ -456,29 +456,10 @@ def highlight_winning_line(p):
 # BIG YES/NO
 # ---------------------------------------
 
+from ui_helpers import custom_popup
+from state import root
+
 def big_yes_no(title, message):
-    win = tk.Toplevel(root)
-    win.title(title)
-    win.geometry("420x180")
-    win.configure(bg="#222222")
-    win.grab_set()
+    # Use custom purple-styled popup with Yes/No buttons
+    return custom_popup(root, title, message, mode="yesno")
 
-    tk.Label(win, text=message, font=("Arial", 14),
-             fg="white", bg="#222222", wraplength=380).pack(pady=20)
-
-    btn_frame = tk.Frame(win, bg="#222222")
-    btn_frame.pack()
-
-    result = {"answer": None}
-
-    def choose(val):
-        result["answer"] = val
-        win.destroy()
-
-    tk.Button(btn_frame, text="Yes", width=10,
-              command=lambda: choose(True)).grid(row=0, column=0, padx=10)
-    tk.Button(btn_frame, text="No", width=10,
-              command=lambda: choose(False)).grid(row=0, column=1, padx=10)
-
-    win.wait_window()
-    return result["answer"]
