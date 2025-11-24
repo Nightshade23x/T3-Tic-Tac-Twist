@@ -1,9 +1,9 @@
 import random
-from tkinter import messagebox
 import state
 from questions import get_question
 from chaos import shuffle_both_players
 from state import root
+from ui_helpers import custom_popup   # <-- NEW IMPORT
 
 
 # -----------------------------------
@@ -70,7 +70,7 @@ def make_move(r, c):
 
     # tile taken?
     if state.board[r][c] != " ":
-        messagebox.showinfo("Iwe", "Spot already taken. Are you blind?")
+        custom_popup(root, "Iwe", "Spot already taken. Are you blind?", mode="ok")
         return
 
     # must answer question first
@@ -90,9 +90,14 @@ def make_move(r, c):
     # USE BANKED MOVE?
     # -------------------------
     if current_bank == 1 and not state.using_bank:
-        action = messagebox.askquestion("Your Move", "You have a banked move.\nUse it now?(PLEASE DOOO)")
+        action = custom_popup(
+            root,
+            "Your Move",
+            "You have a banked move.\nUse it now?",
+            mode="yesno"
+        )
 
-        if action == "yes":
+        if action:
             state.using_bank = True
 
             if not state.shuffled_this_turn:
@@ -114,7 +119,9 @@ def make_move(r, c):
 
             update_banks()
 
-            messagebox.showinfo("Second Move", f"Player {state.player}, place ur next marker pls,pretty pls")
+            custom_popup(root, "Second Move",
+                         f"Player {state.player}, place your next marker.",
+                         mode="ok")
 
             # handle second click
             def second_click(rr, cc):
@@ -137,7 +144,7 @@ def make_move(r, c):
                     state.shuffled_this_turn = False
                     state.using_bank = False
                 else:
-                    messagebox.showinfo("Iwe", "Spot is taken.Are you blind?")
+                    custom_popup(root, "Iwe", "Spot is taken. Are you blind?", mode="ok")
 
             # override all buttons
             for i in range(3):
@@ -150,18 +157,25 @@ def make_move(r, c):
     # OFFER TO BANK MOVE
     # -------------------------
     if (state.player == "X" and state.bank_X == 0) or (
-            state.player == "O" and state.bank_O == 0):
+        state.player == "O" and state.bank_O == 0):
 
-        choice = messagebox.askquestion("Your Move", "Do you want to bank this move for later(PLEASE DO!)?")
+        choice = custom_popup(
+            root,
+            "Your Move",
+            "Do you want to bank this move for later?",
+            mode="yesno"
+        )
 
-        if choice == "yes":
+        if choice:
             if state.player == "X":
                 state.bank_X = 1
             else:
                 state.bank_O = 1
 
             update_banks()
-            messagebox.showinfo("Banked", f"Player {state.player} banked their move.(SMART GUY/GAL)")
+            custom_popup(root, "Banked",
+                         f"Player {state.player} banked their move.",
+                         mode="ok")
             switch_turn()
             return
 
@@ -182,12 +196,12 @@ def make_move(r, c):
         return
 
     if is_draw():
-        messagebox.showinfo("Draw", "FUCKKK,It's a draw!Now i gotta rerun this code ffs")
+        custom_popup(root, "Draw", "It's a draw!", mode="ok")
         state.score_X += 1
         state.score_O += 1
         update_score()
 
-        again = messagebox.askyesno("Draw", "Play again?")
+        again = custom_popup(root, "Draw", "Play again?", mode="yesno")
         if again:
             reset_board(state.player)
         else:
@@ -245,7 +259,7 @@ def declare_winner(p):
 
     starter = big_yes_no(
         "Who starts?",
-        f"{state.player_name[p]} won.\nDo u wanna start the next round or not?"
+        f"{state.player_name[p]} won.\nDo you want to start the next round?"
     )
 
     next_player = p if starter else ("O" if p == "X" else "X")
@@ -292,7 +306,7 @@ def ask_question():
     question_window = tk.Toplevel(root)
     question_window.title(f"Question for Player {state.player}")
     question_window.geometry("700x400")
-    question_window.config(bg="#0E1A2B")  # Midnight blue theme
+    question_window.config(bg="#0E1A2B")
 
     # Center window
     question_window.update_idletasks()
@@ -303,12 +317,9 @@ def ask_question():
     # Handle closing
     def on_close():
         nonlocal timed_out
-        choice = messagebox.askyesno(
-            "Exit Detected",
-            "Quit the game? (Yes = Quit, No = Pick another spot)"
-        )
+        choice = custom_popup(root, "Exit Detected", "Quit the game?", mode="yesno")
         if choice:
-            messagebox.showinfo("I spent all this time just for cowards to jam\n C u never again!")
+            custom_popup(root, "Exit", "I spent all this time coding this just for you to quit...", mode="ok")
             root.destroy()
         else:
             question_window.destroy()
@@ -316,23 +327,20 @@ def ask_question():
 
     question_window.protocol("WM_DELETE_WINDOW", on_close)
 
-    # ---------- FRAME (Centers everything vertically) ----------
     frame = tk.Frame(question_window, bg="#0E1A2B")
     frame.pack(expand=True)
 
-    # ---------- QUESTION ----------
     label_q = tk.Label(
         frame,
         text=q,
         wraplength=600,
-        fg="#E6EFFF",          # soft bluish white
+        fg="#E6EFFF",
         bg="#0E1A2B",
         font=("Arial", 20, "bold"),
         justify="center"
     )
     label_q.pack(pady=(10, 25))
 
-    # ---------- TIMER ----------
     timer_label = tk.Label(
         frame,
         text="Time left: 20",
@@ -342,7 +350,6 @@ def ask_question():
     )
     timer_label.pack(pady=(0, 20))
 
-    # ---------- ANSWER ENTRY ----------
     answer_var = tk.StringVar()
     entry = tk.Entry(
         frame,
@@ -356,7 +363,6 @@ def ask_question():
     entry.pack(pady=(0, 25))
     entry.focus()
 
-    # ---------- SUBMIT BUTTON ----------
     def submit():
         question_window.destroy()
 
@@ -365,14 +371,14 @@ def ask_question():
         text="Submit",
         command=submit,
         font=("Arial", 16, "bold"),
-        bg="#00CC44",         # bright green
+        bg="#00CC44",
         activebackground="#00FF66",
         fg="black",
         width=12
     )
     submit_btn.pack(pady=(0, 10))
 
-    # ---------- TIMER LOGIC ----------
+    # ---------- TIMER ----------
     time_left = 20
 
     def countdown():
@@ -382,7 +388,7 @@ def ask_question():
         if time_left <= 0:
             timed_out = True
             timer_label.config(text="Time left: 0")
-            messagebox.showinfo("Time's Up!", "You ran out of time! Try again next time!")
+            custom_popup(root, "Time's Up!", "You ran out of time!", mode="ok")
             question_window.destroy()
             return
 
@@ -393,13 +399,11 @@ def ask_question():
 
     root.wait_window(question_window)
 
-    # handle exit logic
     if timed_out == "retry":
         return None
     if timed_out:
         return False
 
-    # ---------- ANSWER CHECK ----------
     ans = answer_var.get().strip().lower()
     if ans == "":
         return False
@@ -412,11 +416,8 @@ def ask_question():
         correct_display = a.title()
 
     if correct:
-        messagebox.showinfo("Correct!!!", "Marker earned!")
+        custom_popup(root, "Correct!!!", "Marker earned!", mode="ok")
         return True
 
-    messagebox.showinfo(
-        "Wronggg",
-        f"LOLLLL. Maybe spend less time on reels and more on the news.\nCorrect answer: {correct_display}"
-    )
+    custom_popup(root, "Wrong!", f"Incorrect.\nCorrect answer: {correct_display}", mode="ok")
     return False
