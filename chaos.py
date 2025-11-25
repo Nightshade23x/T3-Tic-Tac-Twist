@@ -1,5 +1,6 @@
 import random
-from tkinter import messagebox
+from ui_helpers import custom_popup   # <-- added
+from state import root               # <-- added
 
 import state
 import game_logic
@@ -91,4 +92,12 @@ def shuffle_both_players():
                     state="disabled"
                 )
 
-    messagebox.showinfo("CHAOS TIME", "Markers shuffled! Prepare for chaosss")
+    # -------------------------
+    # CUSTOM POPUP (replaces messagebox)
+    # -------------------------
+    custom_popup(
+        root,
+        "CHAOS TIME",
+        "Markers shuffled!\nPrepare for chaosss",
+        mode="ok"   # single OK button
+    )
