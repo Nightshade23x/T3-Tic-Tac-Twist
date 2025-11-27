@@ -419,5 +419,5 @@ def ask_question():
         custom_popup(root, "Correct!!!", "Marker earned! Fairs!", mode="ok")
         return True
 
-    custom_popup(root, "Wrong!", f"Incorrect.Maybe spend some time on useful things rather than Reels\nCorrect answer: {correct_display}", mode="ok")
+    custom_popup(root, "Wrong!", f"Incorrect.Maybe spend some time on useful things rather than Reels\n\nCorrect answer: {correct_display}", mode="ok")
     return False

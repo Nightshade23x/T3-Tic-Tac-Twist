@@ -72,7 +72,7 @@ def custom_popup(root, title, message, mode="ok"):
             justify="center",
             font=("Segoe UI", 12, "bold")
         )
-        canvas.create_window(190, 90, window=msg_main)
+        canvas.create_window(190, 80, window=msg_main)
 
         msg_answer = tk.Label(
             win,
@@ -83,7 +83,7 @@ def custom_popup(root, title, message, mode="ok"):
             justify="center",
             font=("Segoe UI", 12, "bold")
         )
-        canvas.create_window(190, 120, window=msg_answer)
+        canvas.create_window(190, 140, window=msg_answer)
 
     elif "wins!" in message:
         # WINNER POPUP (from big_yes_no)
