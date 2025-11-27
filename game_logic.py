@@ -162,7 +162,7 @@ def make_move(r, c):
         choice = custom_popup(
             root,
             "Your Move",
-            "Do you want to bank this move for later?",
+            "Do you want to bank this move for later(PLS DO)?",
             mode="yesno"
         )
 
@@ -174,7 +174,7 @@ def make_move(r, c):
 
             update_banks()
             custom_popup(root, "Banked",
-                         f"Player {state.player} banked their move.",
+                         f"Player {state.player} banked their move.(Smart mf)",
                          mode="ok")
             switch_turn()
             return
@@ -196,7 +196,7 @@ def make_move(r, c):
         return
 
     if is_draw():
-        custom_popup(root, "Draw", "It's a draw!", mode="ok")
+        custom_popup(root, "Draw", "FUCKKKK..It's a draw! Now i gotta rerun this code", mode="ok")
         state.score_X += 1
         state.score_O += 1
         update_score()
@@ -319,7 +319,7 @@ def ask_question():
         nonlocal timed_out
         choice = custom_popup(root, "Exit Detected", "Quit the game?", mode="yesno")
         if choice:
-            custom_popup(root, "Exit", "I spent all this time coding this just for you to quit...", mode="ok")
+            custom_popup(root, "Exit", "I spent all this time coding this just for cowards to jam", mode="ok")
             root.destroy()
         else:
             question_window.destroy()
@@ -379,7 +379,7 @@ def ask_question():
     submit_btn.pack(pady=(0, 10))
 
     # ---------- TIMER ----------
-    time_left = 20
+    time_left = 31
 
     def countdown():
         nonlocal time_left, timed_out
@@ -388,7 +388,7 @@ def ask_question():
         if time_left <= 0:
             timed_out = True
             timer_label.config(text="Time left: 0")
-            custom_popup(root, "Time's Up!", "You ran out of time!", mode="ok")
+            custom_popup(root, "Time's Uppp!", "Tbf even if I put 5 mins,u wouldnt get the ans lol!", mode="ok")
             question_window.destroy()
             return
 
@@ -416,8 +416,8 @@ def ask_question():
         correct_display = a.title()
 
     if correct:
-        custom_popup(root, "Correct!!!", "Marker earned!", mode="ok")
+        custom_popup(root, "Correct!!!", "Marker earned! Fairs!", mode="ok")
         return True
 
-    custom_popup(root, "Wrong!", f"Incorrect.\nCorrect answer: {correct_display}", mode="ok")
+    custom_popup(root, "Wrong!", f"Incorrect.Maybe spend some time on useful things rather than Reels\nCorrect answer: {correct_display}", mode="ok")
     return False

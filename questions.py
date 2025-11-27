@@ -7,11 +7,12 @@ from tkinter import messagebox
 instructions = (
     " HOW TO PLAY T3: TIC TAC TWIST \n\n"
     "1. Answer the questions to earn your move.\n"
-    "2. Wrong = Lose your turn.\n"
+    "2. Wrong = Lose your turn. Aint no mercy here\n"
     "3. You can place your move or bank it.\n"
     "4. Banking gives you a chance to place a second marker later.\n"
-    "   But beware... CHAOS MODE may shuffle everything!\n\n"
+    "   But beware... CHAOS exists!\n\n"
     "Welcome to T3 — where knowledge meets chaos."
+    "A game by Sammy Boy,Oct 2025"
 )
 
 
@@ -197,9 +198,6 @@ questions = [
     ("What is the national animal of China", ["giant panda","panda"])
 ]
 
-
-
-# You will later paste ALL your questions into this list.
 
 
 # ---------------------------

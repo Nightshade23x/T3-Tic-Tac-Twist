@@ -138,11 +138,13 @@ def show_instructions_ui():
     instructions_text = (
         "HOW TO PLAY T3: TIC TAC TWIST\n\n"
         "1. Answer the questions to earn your move.\n"
-        "2. Wrong = Lose your turn.\n"
+        "2. Wrong = Lose your turn. Aint no mercy here\n"
         "3. You can place your move or bank it.\n"
         "4. Banking gives you a chance for a second marker later.\n"
-        "   But beware… CHAOS MODE may shuffle everything!\n\n"
-        "Welcome to T3 — where knowledge meets chaos."
+        "   But beware… CHAOS exists!\n\n"
+        "Welcome to T3 — where knowledge meets chaos.\n"
+        "A game by Sammy Boy,Oct 2025"
+
     )
 
     text_label = tk.Label(
@@ -173,13 +175,6 @@ def show_instructions_ui():
     )
     btn.pack(pady=(40, 30))  # push toward bottom
 
-
-
-
-
-# ---------------------------------------
-# NAME ENTRY
-# ---------------------------------------
 
 def ask_player_names():
     name_window = tk.Toplevel(root)
@@ -297,14 +292,6 @@ def set_player_names():
 
     root.wait_window(win)
 
-
-
-
-
-
-# ---------------------------------------
-# GAME UI
-# ---------------------------------------
 
 def start_game_ui():
     coin_toss_animation()
