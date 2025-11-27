@@ -58,19 +58,28 @@ def coin_toss_animation():
 
     results = ["Heads", "Tails"]
 
+    FLIP_INTERVAL = 80      # ms per flicker
+    TOTAL_TIME = 3000       # 4 seconds
+    FLIP_COUNT = TOTAL_TIME // FLIP_INTERVAL  # ~62 flips
+
     def animate(count=0):
-        if count < 15:
+        if count < FLIP_COUNT:
             toss_label.config(text=random.choice(results))
-            toss_window.after(80, animate, count + 1)
+            toss_window.after(FLIP_INTERVAL, animate, count + 1)
         else:
+            # actual random start
+            starting_player = random.choice(["X", "O"])
+            state.player = starting_player
+
             toss_label.config(
-                text=f"{state.player_name[state.player]} ({state.player}) starts!",
+                text=f"{state.player_name[starting_player]} ({starting_player}) starts!",
                 fg="#00ff66"
             )
             toss_window.after(1200, toss_window.destroy)
 
     animate()
     root.wait_window(toss_window)
+
 
 
 # ---------------------------------------
@@ -85,11 +94,24 @@ def start_menu_ui():
     menu.grab_set()
     menu.focus_force()
 
-    tk.Label(menu,
-             text="T3: TIC TAC TWIST",
-             font=("Arial", 24, "bold"),
-             fg="#00ff99",
-             bg="#111111").pack(pady=30)
+    tk.Label(
+        menu,
+        text="T3: TIC TAC TWIST",
+        font=("Arial", 24, "bold"),
+        fg="#00ff99",
+        bg="#111111"
+    ).pack(pady=30)
+
+    # ---------------------------------------
+    # CONSISTENT BUTTON SETTINGS
+    # ---------------------------------------
+    BUTTON_WIDTH = 20
+    BUTTON_FONT = ("Arial", 14, "bold")
+    BUTTON_SPACING = 12
+
+    # frame to ensure perfect centering
+    btn_frame = tk.Frame(menu, bg="#111111")
+    btn_frame.pack()
 
     def start_game():
         menu.destroy()
@@ -99,15 +121,29 @@ def start_menu_ui():
         menu.destroy()
         show_instructions_ui()
 
-    tk.Button(menu, text="Start Game", font=("Arial", 16, "bold"),
-              width=15, bg="#00cc66", fg="black", command=start_game).pack(pady=20)
+    # Start Game
+    tk.Button(
+        btn_frame, text="Start Game",
+        font=BUTTON_FONT, width=BUTTON_WIDTH,
+        bg="#00cc66", fg="black",
+        command=start_game
+    ).pack(pady=BUTTON_SPACING)
 
-    tk.Button(menu, text="Instructions", font=("Arial", 14),
-              width=15, bg="#444444", fg="white", command=show_rules).pack(pady=10)
+    # Instructions
+    tk.Button(
+        btn_frame, text="Instructions",
+        font=BUTTON_FONT, width=BUTTON_WIDTH,
+        bg="#444444", fg="white",
+        command=show_rules
+    ).pack(pady=BUTTON_SPACING)
 
-    tk.Button(menu, text="Quit", font=("Arial", 14),
-              width=15, bg="#cc3333", fg="white",
-              command=lambda: root.destroy()).pack(pady=10)
+    # Quit
+    tk.Button(
+        btn_frame, text="Quit",
+        font=BUTTON_FONT, width=BUTTON_WIDTH,
+        bg="#cc3333", fg="white",
+        command=lambda: root.destroy()
+    ).pack(pady=BUTTON_SPACING)
 
     root.wait_window(menu)
 
