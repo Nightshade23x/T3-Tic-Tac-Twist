@@ -190,3 +190,23 @@ def custom_popup(root, title, message, mode="ok"):
 
     win.wait_window()
     return result["value"]
+
+def auto_close_thanks(root):
+    win = tk.Toplevel(root)
+    win.title("Goodbye!")
+    win.geometry("350x150")
+    win.configure(bg="#111111")
+    win.grab_set()
+
+    tk.Label(
+        win,
+        text="Thanks for playing!",
+        font=("Arial", 18, "bold"),
+        fg="#00ff99",
+        bg="#111111"
+    ).pack(expand=True)
+
+    # Auto-close after 3 seconds
+    win.after(3000, win.destroy)
+
+    root.wait_window(win)

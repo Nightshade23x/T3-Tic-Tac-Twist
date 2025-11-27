@@ -3,7 +3,8 @@ import state
 from questions import get_question
 from chaos import shuffle_both_players
 from state import root
-from ui_helpers import custom_popup   # <-- NEW IMPORT
+from ui_helpers import custom_popup 
+from ui_helpers import auto_close_thanks  # <-- NEW IMPORT
 
 
 # -----------------------------------
@@ -254,6 +255,7 @@ def declare_winner(p):
 
 
     if not again:
+        auto_close_thanks(root)
         root.destroy()
         return
 
